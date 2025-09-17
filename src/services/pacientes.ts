@@ -1,12 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { CreatePacienteInput, createPacienteSchema, UpdatePacienteInput, updatePacienteSchema } from "@/lib/validations/paciente";
-
+import { CreatePacienteInput, UpdatePacienteInput } from "@/lib/validations/paciente";
 
 export async function listPacientes(opts: {
   usuarioId: string;
   q?: string;
   take?: number;
-  cursorId?: string; // para paginación
+  cursorId?: string;
 }) {
   const { usuarioId, q, take = 20, cursorId } = opts;
 
@@ -44,21 +43,20 @@ export async function getPacienteById(id: string, usuarioId: string) {
 }
 
 export async function createPaciente(input: CreatePacienteInput) {
-  const data = createPacienteSchema.parse(input);
-  return prisma.paciente.create({ data });
+  // NO validar aquí - ya viene validado del action
+  return prisma.paciente.create({ data: input });
 }
 
 export async function updatePaciente(id: string, input: UpdatePacienteInput) {
-  const data = updatePacienteSchema.parse(input);
+  // NO validar aquí - ya viene validado del action
   return prisma.paciente.update({
     where: { id },
-    data,
+    data: input,
   });
 }
 
 export async function deletePaciente(id: string, usuarioId?: string) {
   if (usuarioId) {
-    // seguridad extra: asegura pertenencia
     await prisma.paciente.findFirstOrThrow({ where: { id, usuarioId } });
   }
   await prisma.paciente.delete({ where: { id } });

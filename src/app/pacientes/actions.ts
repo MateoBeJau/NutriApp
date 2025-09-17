@@ -1,73 +1,99 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import {
-  createPaciente,
-  updatePaciente,
-  deletePaciente,
-  listPacientes,
-  getPacienteById,
-} from "@/services/pacientes";
+import { z } from "zod";
+import { createPaciente, updatePaciente, deletePaciente, listPacientes, getPacienteById } from "@/services/pacientes";
 import { createPacienteSchema, type CreatePacienteInput, type UpdatePacienteInput } from "@/lib/validations/paciente";
 
-
-
-
-// 🔐 Por ahora pasamos usuarioId por parámetro.
-// Cuando tengas auth, lo sacarás de la sesión en el server.
 export async function listPacientesAction(usuarioId: string, q?: string) {
-  return listPacientes({ usuarioId, q, take: 50 });
+  try {
+    return await listPacientes({ usuarioId, q, take: 50 });
+  } catch (error) {
+    console.error("Error listing pacientes:", error);
+    throw new Error("Error al obtener la lista de pacientes");
+  }
 }
 
 export async function getPacienteAction(id: string, usuarioId: string) {
-  return getPacienteById(id, usuarioId);
+  try {
+    return await getPacienteById(id, usuarioId);
+  } catch (error) {
+    console.error("Error getting paciente:", error);
+    throw new Error("Error al obtener el paciente");
+  }
 }
 
 export async function createPacienteAction(input: CreatePacienteInput) {
-  const created = await createPaciente(input);
-  revalidatePath("/pacientes");
-  return created;
+  try {
+    const created = await createPaciente(input);
+    revalidatePath("/pacientes");
+    return created;
+  } catch (error) {
+    console.error("Error creating paciente:", error);
+    throw new Error("Error al crear el paciente");
+  }
 }
 
 export async function updatePacienteAction(id: string, input: UpdatePacienteInput) {
-  const updated = await updatePaciente(id, input);
-  revalidatePath("/pacientes");
-  return updated;
+  try {
+    const updated = await updatePaciente(id, input);
+    revalidatePath("/pacientes");
+    return updated;
+  } catch (error) {
+    console.error("Error updating paciente:", error);
+    throw new Error("Error al actualizar el paciente");
+  }
 }
 
 export async function deletePacienteAction(id: string, usuarioId: string) {
-  const result = await deletePaciente(id, usuarioId);
-  revalidatePath("/pacientes");
-  return result;
+  try {
+    const result = await deletePaciente(id, usuarioId);
+    revalidatePath("/pacientes");
+    return result;
+  } catch (error) {
+    console.error("Error deleting paciente:", error);
+    throw new Error("Error al eliminar el paciente");
+  }
 }
 
-
-// 
+// Server Action para formularios con manejo de errores mejorado
 export async function createPacienteFromForm(formData: FormData) {
-  // Convertir valores crudos del form
-  const raw = {
-    usuarioId: String(formData.get("usuarioId") || ""),
-    nombre: String(formData.get("nombre") || ""),
-    apellido: String(formData.get("apellido") || ""),
-    email: String(formData.get("email") || ""),
-    telefono: String(formData.get("telefono") || ""),
-    fechaNacimiento: String(formData.get("fechaNacimiento") || ""),
-    sexo: String(formData.get("sexo") || ""),
-    alturaCm: String(formData.get("alturaCm") || ""),
-    notas: String(formData.get("notas") || ""),
-  };
+  try {
+    // Convertir FormData a objeto
+    const raw = {
+      usuarioId: formData.get("usuarioId") as string,
+      nombre: formData.get("nombre") as string,
+      apellido: formData.get("apellido") as string,
+      email: formData.get("email") as string,
+      telefono: formData.get("telefono") as string,
+      fechaNacimiento: formData.get("fechaNacimiento") as string,
+      sexo: formData.get("sexo") as string,
+      alturaCm: formData.get("alturaCm") as string,
+      notas: formData.get("notas") as string,
+    };
 
-  // Validar y transformar con Zod
-  const parsed = createPacienteSchema.parse({
-    ...raw,
+    // Validar y transformar con Zod
+    const validatedData = createPacienteSchema.parse(raw);
 
-    email: raw.email === "" ? undefined : raw.email,
-    fechaNacimiento: raw.fechaNacimiento || undefined,
-    alturaCm: raw.alturaCm || undefined,
-  });
-
-  // Guardar en DB
-  const created = await createPacienteAction(parsed);
-  return created;
+    // Guardar en DB
+    const created = await createPaciente(validatedData);
+    revalidatePath("/pacientes");
+    return created;
+  } catch (error) {
+    console.error("Error in createPacienteFromForm:", error);
+    
+    if (error instanceof z.ZodError) {
+      // ✅ CORREGIDO - Usar 'issues' en lugar de 'errors'
+      const errorMessages = error.issues.map((err: z.ZodIssue) => {
+        const field = err.path.join('.');
+        return `${field}: ${err.message}`;
+      }).join(', ');
+      
+      throw new Error(`Error de validación: ${errorMessages}`);
+    }
+    
+    // Re-lanzar otros errores
+    throw error;
+  }
 }
 

@@ -2,6 +2,7 @@
 
 import { createPacienteFromForm } from "@/app/pacientes/actions";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Props = {
   usuarioId: string;
@@ -9,6 +10,7 @@ type Props = {
 
 export default function FormPaciente({ usuarioId }: Props) {
   const [submitting, setSubmitting] = useState(false);
+  const router = useRouter();
 
   return (
     <form
@@ -16,16 +18,16 @@ export default function FormPaciente({ usuarioId }: Props) {
         setSubmitting(true);
         try {
           await createPacienteFromForm(formData);
-          // redireccionar al listado:
-          window.location.href = "/pacientes";
+          // Usar router de Next.js en lugar de window.location
+          router.push("/pacientes");
         } finally {
           setSubmitting(false);
         }
       }}
       className="grid grid-cols-1 gap-4 max-w-xl"
     >
-      {/* oculto: por ahora pasamos el usuarioId así hasta tener Auth */}
-      <input type="hidden" name="usuarioId" value="03c0ece4-106d-4a39-8536-3ec2a8cf7102" />
+      {/* Usar la prop usuarioId en lugar del valor hardcodeado */}
+      <input type="hidden" name="usuarioId" value={usuarioId} />
 
 
       <div className="grid gap-1">
