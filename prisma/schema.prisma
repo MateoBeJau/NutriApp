@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  nombre        String
+  passwordHash  String
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  pacientes Paciente[]
+  consultas Consulta[]
+}
+
+model Paciente {
+  id              String    @id @default(uuid())
+  usuarioId       String
+  nombre          String
+  apellido        String
+  email           String?
+  telefono        String?
+  fechaNacimiento DateTime?
+  sexo            String?
+  alturaCm        Float?
+  notas           String?
+  activo          Boolean   @default(true)
+  creadoEn        DateTime  @default(now())
+  actualizadoEn   DateTime  @updatedAt
+
+  usuario    Usuario    @relation(fields: [usuarioId], references: [id])
+  mediciones Medicion[]
+  consultas  Consulta[]
+
+  @@index([usuarioId, apellido])
+}
+
+model Medicion {
+  id         String   @id @default(uuid())
+  pacienteId String
+  fecha      DateTime
+  pesoKg     Float?
+  alturaCm   Float?
+  imc        Float?
+  notas      String?
+  creadoEn   DateTime @default(now())
+
+  paciente Paciente @relation(fields: [pacienteId], references: [id])
+
+  @@index([pacienteId, fecha])
+}
+
+enum EstadoConsulta {
+  PROGRAMADO
+  CONFIRMADO
+  CANCELADO
+  AUSENTE
+  COMPLETADO
+}
+
+model Consulta {
+  id            String         @id @default(uuid())
+  usuarioId     String
+  pacienteId    String
+  inicio        DateTime
+  fin           DateTime
+  estado        EstadoConsulta
+  lugar         String?
+  notas         String?
+  creadoEn      DateTime       @default(now())
+  actualizadoEn DateTime       @updatedAt
+
+  usuario  Usuario  @relation(fields: [usuarioId], references: [id])
+  paciente Paciente @relation(fields: [pacienteId], references: [id])
+
+  @@index([usuarioId, inicio])
+}
