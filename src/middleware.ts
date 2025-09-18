@@ -3,21 +3,27 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  
+  // Verificar token solo si es necesario
   const token = request.cookies.get('auth-token')?.value;
-  const isAuthPage = request.nextUrl.pathname.startsWith('/auth/login') || 
-                     request.nextUrl.pathname.startsWith('/auth/register');
-  const isProtectedRoute = request.nextUrl.pathname.startsWith('/pacientes') ||
-                          request.nextUrl.pathname.startsWith('/agenda') ||
-                          request.nextUrl.pathname.startsWith('/planes');
+  
+  // Rutas de autenticación
+  const isAuthPage = pathname === '/auth/login' || pathname === '/auth/register';
+  
+  // Rutas protegidas
+  const isProtectedRoute = pathname.startsWith('/pacientes') ||
+                          pathname.startsWith('/agenda') ||
+                          pathname.startsWith('/planes');
 
-  // Si está en página de auth y tiene token, redirigir a pacientes
+  // Redirección más rápida para auth pages
   if (isAuthPage && token) {
-    return NextResponse.redirect(new URL('/pacientes', request.url));
+    return NextResponse.redirect(new URL('/pacientes', request.url), { status: 302 });
   }
 
-  // Si está en ruta protegida y no tiene token, redirigir a login
+  // Redirección más rápida para rutas protegidas
   if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL('/auth/login', request.url));
+    return NextResponse.redirect(new URL('/auth/login', request.url), { status: 302 });
   }
 
   return NextResponse.next();

@@ -50,7 +50,7 @@ export async function loginAction(formData: FormData) {
     });
 
     // 6. Redirigir a la página de pacientes
-    redirect("/pacientes");
+    return redirect("/pacientes");
   } catch (error) {
     console.error("Error en login:", error);
     return redirect("/auth/login?error=Error interno del servidor");

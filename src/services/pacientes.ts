@@ -55,10 +55,20 @@ export async function updatePaciente(id: string, input: UpdatePacienteInput) {
   });
 }
 
+// ✅ OPTIMIZACIÓN: Eliminar con una sola query
 export async function deletePaciente(id: string, usuarioId?: string) {
   if (usuarioId) {
-    await prisma.paciente.findFirstOrThrow({ where: { id, usuarioId } });
+    // Usar deleteMany con condiciones para una sola query
+    const result = await prisma.paciente.deleteMany({
+      where: { id, usuarioId }
+    });
+    
+    if (result.count === 0) {
+      throw new Error("Paciente no encontrado o no autorizado");
+    }
+  } else {
+    await prisma.paciente.delete({ where: { id } });
   }
-  await prisma.paciente.delete({ where: { id } });
+  
   return { ok: true };
 }

@@ -4,6 +4,7 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword, generateToken, type AuthUser } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export async function registerAction(nombre: string, email: string, password: string) {
   const existingUser = await prisma.usuario.findUnique({
@@ -40,7 +41,8 @@ export async function registerAction(nombre: string, email: string, password: st
     maxAge: 7 * 24 * 60 * 60
   });
 
-  return authUser;
+  // Redirigir automáticamente después del registro
+  return redirect("/pacientes");
 }
 
 

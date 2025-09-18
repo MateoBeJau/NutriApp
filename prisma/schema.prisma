@@ -27,25 +27,51 @@ model Usuario {
 }
 
 model Paciente {
-  id              String    @id @default(uuid())
-  usuarioId       String
-  nombre          String
-  apellido        String
-  email           String?
-  telefono        String?
+  id            String   @id @default(cuid())
+  usuarioId     String
+  usuario       Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  // Datos básicos
+  nombre        String
+  apellido      String
+  email         String?
+  telefono      String?
   fechaNacimiento DateTime?
-  sexo            String?
-  alturaCm        Float?
-  notas           String?
-  activo          Boolean   @default(true)
-  creadoEn        DateTime  @default(now())
-  actualizadoEn   DateTime  @updatedAt
+  sexo          String?
+  alturaCm      Int?
+  notas         String?
+  activo        Boolean  @default(true)
+  
+  // Relaciones
+  perfilMedico  PerfilMedico?
+  mediciones    Medicion[]
+  consultas     Consulta[]
+  
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+}
 
-  usuario    Usuario    @relation(fields: [usuarioId], references: [id])
-  mediciones Medicion[]
-  consultas  Consulta[]
-
-  @@index([usuarioId, apellido])
+model PerfilMedico {
+  id            String   @id @default(cuid())
+  pacienteId    String   @unique
+  paciente      Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  
+  // Preferencias alimentarias
+  gustos        String?  // "Pollo, pescado, verduras verdes"
+  disgustos     String?  // "Mariscos, picante, lácteos"
+  
+  // Información médica
+  alergias      String?  // "Nueces, mariscos, polen"
+  enfermedades  String?  // "Diabetes tipo 2, hipertensión"
+  medicamentos  String?  // "Metformina 500mg, Losartán"
+  
+  // Información adicional
+  restricciones String?  // "Sin gluten, vegano"
+  objetivos     String?  // "Bajar 10kg, ganar masa muscular"
+  observaciones String?  // Notas generales del nutricionista
+  
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
 }
 
 model Medicion {
