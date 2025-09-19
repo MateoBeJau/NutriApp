@@ -27,26 +27,26 @@ model Usuario {
 }
 
 model Paciente {
-  id            String   @id @default(cuid())
-  usuarioId     String
-  usuario       Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  
+  id        String  @id @default(cuid())
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
   // Datos básicos
-  nombre        String
-  apellido      String
-  email         String?
-  telefono      String?
+  nombre          String
+  apellido        String
+  email           String?
+  telefono        String?
   fechaNacimiento DateTime?
-  sexo          String?
-  alturaCm      Int?
-  notas         String?
-  activo        Boolean  @default(true)
-  
+  sexo            String?
+  alturaCm        Int?
+  notas           String?
+  activo          Boolean   @default(true)
+
   // Relaciones
-  perfilMedico  PerfilMedico?
-  mediciones    Medicion[]
-  consultas     Consulta[]
-  
+  perfilMedico PerfilMedico?
+  mediciones   Medicion[]
+  consultas    Consulta[]
+
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
 
@@ -57,24 +57,24 @@ model Paciente {
 }
 
 model PerfilMedico {
-  id            String   @id @default(cuid())
-  pacienteId    String   @unique
-  paciente      Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
-  
+  id         String   @id @default(cuid())
+  pacienteId String   @unique
+  paciente   Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+
   // Preferencias alimentarias
-  gustos        String?  // "Pollo, pescado, verduras verdes"
-  disgustos     String?  // "Mariscos, picante, lácteos"
-  
+  gustos    String? // "Pollo, pescado, verduras verdes"
+  disgustos String? // "Mariscos, picante, lácteos"
+
   // Información médica
-  alergias      String?  // "Nueces, mariscos, polen"
-  enfermedades  String?  // "Diabetes tipo 2, hipertensión"
-  medicamentos  String?  // "Metformina 500mg, Losartán"
-  
+  alergias     String? // "Nueces, mariscos, polen"
+  enfermedades String? // "Diabetes tipo 2, hipertensión"
+  medicamentos String? // "Metformina 500mg, Losartán"
+
   // Información adicional
-  restricciones String?  // "Sin gluten, vegano"
-  objetivos     String?  // "Bajar 10kg, ganar masa muscular"
-  observaciones String?  // Notas generales del nutricionista
-  
+  restricciones String? // "Sin gluten, vegano"
+  objetivos     String? // "Bajar 10kg, ganar masa muscular"
+  observaciones String? // Notas generales del nutricionista
+
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
 }
@@ -82,6 +82,7 @@ model PerfilMedico {
 model Medicion {
   id         String   @id @default(uuid())
   pacienteId String
+  consultaId String? // ✅ Opcional - puede ser null
   fecha      DateTime
   pesoKg     Float?
   alturaCm   Float?
@@ -89,7 +90,8 @@ model Medicion {
   notas      String?
   creadoEn   DateTime @default(now())
 
-  paciente Paciente @relation(fields: [pacienteId], references: [id])
+  paciente Paciente  @relation(fields: [pacienteId], references: [id])
+  consulta Consulta? @relation("ConsultaMediciones", fields: [consultaId], references: [id]) // ✅ Opcional
 
   @@index([pacienteId, fecha])
 }
@@ -100,6 +102,7 @@ enum EstadoConsulta {
   CANCELADO
   AUSENTE
   COMPLETADO
+  REAGENDADO // ✅ Nuevo estado
 }
 
 model Consulta {
@@ -108,14 +111,15 @@ model Consulta {
   pacienteId    String
   inicio        DateTime
   fin           DateTime
-  estado        EstadoConsulta
+  estado        EstadoConsulta @default(PROGRAMADO)
   lugar         String?
   notas         String?
   creadoEn      DateTime       @default(now())
   actualizadoEn DateTime       @updatedAt
 
-  usuario  Usuario  @relation(fields: [usuarioId], references: [id])
-  paciente Paciente @relation(fields: [pacienteId], references: [id])
+  usuario    Usuario    @relation(fields: [usuarioId], references: [id])
+  paciente   Paciente   @relation(fields: [pacienteId], references: [id])
+  mediciones Medicion[] @relation("ConsultaMediciones") // ✅ Relación opcional
 
   @@index([usuarioId, inicio])
 }

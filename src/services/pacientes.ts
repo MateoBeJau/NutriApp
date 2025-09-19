@@ -100,3 +100,26 @@ export async function deletePaciente(id: string, usuarioId?: string) {
   
   return { ok: true };
 }
+
+// ✅ NUEVA FUNCIÓN: Para obtener todos los pacientes activos (para el formulario de consultas)
+export async function obtenerPacientesActivos(usuarioId: string) {
+  const pacientes = await prisma.paciente.findMany({
+    where: {
+      usuarioId,
+      activo: true
+    },
+    select: {
+      id: true,
+      nombre: true,
+      apellido: true,
+      email: true,
+      telefono: true,
+    },
+    orderBy: [
+      { apellido: 'asc' },
+      { nombre: 'asc' }
+    ]
+  });
+
+  return pacientes;
+}
