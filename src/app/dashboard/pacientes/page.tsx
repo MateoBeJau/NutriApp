@@ -49,7 +49,7 @@ export default async function PacientesPage({
             </div>
             <div className="flex gap-3">
               <Link
-                href="/pacientes/nuevo"
+                href="/dashboard/pacientes/nuevo"
                 className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
               >
                 <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,7 +169,7 @@ export default async function PacientesPage({
         {nextCursor && (
           <div className="mt-8 flex justify-center">
             <Link
-              href={`/pacientes?${new URLSearchParams({ ...(q ? { q } : {}), cursor: nextCursor }).toString()}`}
+              href={`/dashboard/pacientes?${new URLSearchParams({ ...(q ? { q } : {}), cursor: nextCursor }).toString()}`}
               className="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

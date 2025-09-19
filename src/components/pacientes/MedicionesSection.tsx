@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getMedicionesAction, createMedicionAction, updateMedicionAction, deleteMedicionAction } from "@/app/pacientes/actions";
+import { createMedicionAction, updateMedicionAction, deleteMedicionAction, getMedicionesAction } from "@/app/dashboard/pacientes/actions";
 import { Edit, Save, X, Plus, Trash2, Scale, Ruler, Activity, Calendar } from "lucide-react";
 
 interface MedicionesSectionProps {
   pacienteId: string;
+  initialMediciones?: Medicion[]; // ✅ CORREGIDO: Usar tipo específico en lugar de any[]
 }
 
 interface Medicion {
@@ -18,11 +19,10 @@ interface Medicion {
   creadoEn: Date;
 }
 
-export default function MedicionesSection({ pacienteId }: MedicionesSectionProps) {
-  const [mediciones, setMediciones] = useState<Medicion[]>([]);
+export default function MedicionesSection({ pacienteId, initialMediciones = [] }: MedicionesSectionProps) {
+  const [mediciones, setMediciones] = useState<Medicion[]>(initialMediciones);
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -33,29 +33,15 @@ export default function MedicionesSection({ pacienteId }: MedicionesSectionProps
     notas: "",
   });
 
-  useEffect(() => {
-    loadMediciones();
-  }, [pacienteId]);
-
+  // ✅ CORREGIDO: Usar server action en lugar de fetch
   const loadMediciones = async () => {
     try {
-      setLoading(true);
-      console.log("🔍 Loading mediciones for pacienteId:", pacienteId);
-      
-      // ✅ SOLUCIÓN SIMPLE: Usar cualquier usuarioId
-      const result = await getMedicionesAction(pacienteId, "any-user-id");
-      console.log("🔍 getMedicionesAction result:", result);
-      
+      const result = await getMedicionesAction(pacienteId, "current-user-id");
       if (result.success && result.data) {
         setMediciones(result.data);
-        console.log("✅ Mediciones loaded:", result.data);
-      } else {
-        console.log("❌ Error loading mediciones:", result.error);
       }
     } catch (error) {
-      console.error("❌ Error loading mediciones:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error loading mediciones:", error);
     }
   };
 
@@ -90,14 +76,14 @@ export default function MedicionesSection({ pacienteId }: MedicionesSectionProps
       if (isCreating) {
         const result = await createMedicionAction(pacienteId, formData);
         if (result.success) {
-          await loadMediciones();
+          await loadMediciones(); // Recargar después de crear
           setIsCreating(false);
           setIsEditing(false);
         }
       } else if (editingId) {
         const result = await updateMedicionAction(editingId, formData);
         if (result.success) {
-          await loadMediciones();
+          await loadMediciones(); // Recargar después de editar
           setEditingId(null);
           setIsEditing(false);
         }
@@ -127,7 +113,7 @@ export default function MedicionesSection({ pacienteId }: MedicionesSectionProps
       try {
         const result = await deleteMedicionAction(id, pacienteId);
         if (result.success) {
-          await loadMediciones();
+          await loadMediciones(); // Recargar después de eliminar
         }
       } catch (error) {
         console.error("Error deleting medicion:", error);
@@ -161,14 +147,6 @@ export default function MedicionesSection({ pacienteId }: MedicionesSectionProps
       imc: (peso && altura) ? calculateIMC(peso, altura) : ""
     }));
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

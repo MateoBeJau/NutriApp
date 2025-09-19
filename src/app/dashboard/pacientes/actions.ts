@@ -6,7 +6,7 @@ import { createPaciente, updatePaciente, deletePaciente, listPacientes, getPacie
 import { createPacienteSchema, updatePacienteFormSchema, type CreatePacienteInput, type UpdatePacienteInput } from "@/lib/validations/paciente";
 import { createPerfilMedico, updatePerfilMedico, getPerfilMedico } from "@/services/perfilMedico";
 import { createPerfilMedicoSchema, updatePerfilMedicoSchema } from "@/lib/validations/perfilMedico";
-import { createMedicion, updateMedicion, deleteMedicion, getMedicionById, getMedicionesByPaciente, getUltimaMedicion } from "@/services/mediciones";
+import { createMedicion, updateMedicion, deleteMedicion, getMedicionesByPaciente, getUltimaMedicion } from "@/services/mediciones";
 import { createMedicionSchema, updateMedicionSchema } from "@/lib/validations/medicion";
 
 export async function listPacientesAction(usuarioId: string, q?: string) {
@@ -20,7 +20,11 @@ export async function listPacientesAction(usuarioId: string, q?: string) {
 
 export async function getPacienteAction(id: string, usuarioId: string) {
   try {
-    return await getPacienteById(id, usuarioId);
+    const startTime = Date.now();
+    const paciente = await getPacienteById(id, usuarioId);
+    const queryTime = Date.now() - startTime;
+    console.log(`🔍 getPacienteAction took: ${queryTime}ms`);
+    return paciente;
   } catch (error) {
     console.error("Error getting paciente:", error);
     throw new Error("Error al obtener el paciente");
@@ -30,7 +34,7 @@ export async function getPacienteAction(id: string, usuarioId: string) {
 export async function createPacienteAction(input: CreatePacienteInput) {
   try {
     const created = await createPaciente(input);
-    revalidatePath("/pacientes");
+    revalidatePath("/dashboard/pacientes");
     return created;
   } catch (error) {
     console.error("Error creating paciente:", error);
@@ -41,7 +45,7 @@ export async function createPacienteAction(input: CreatePacienteInput) {
 export async function updatePacienteAction(id: string, input: UpdatePacienteInput) {
   try {
     const updated = await updatePaciente(id, input);
-    revalidatePath("/pacientes");
+    revalidatePath("/dashboard/pacientes");
     return updated;
   } catch (error) {
     console.error("Error updating paciente:", error);
@@ -52,7 +56,7 @@ export async function updatePacienteAction(id: string, input: UpdatePacienteInpu
 export async function deletePacienteAction(id: string, usuarioId: string) {
   try {
     const result = await deletePaciente(id, usuarioId);
-    revalidatePath("/pacientes");
+    revalidatePath("/dashboard/pacientes");
     return result;
   } catch (error) {
     console.error("Error deleting paciente:", error);
@@ -82,7 +86,7 @@ export async function createPacienteFromForm(formData: FormData) {
 
     const validatedData = createPacienteSchema.parse(raw);
     const created = await createPaciente(validatedData);
-    revalidatePath("/pacientes");
+    revalidatePath("/dashboard/pacientes");
     return created;
   } catch (error) {
     console.error("Error in createPacienteFromForm:", error);
@@ -114,7 +118,6 @@ export async function updatePacienteFromForm(formData: FormData) {
       notas: formData.get("notas") as string,
     };
 
-    // ✅ Validación rápida
     if (!raw.id || !raw.nombre || !raw.apellido) {
       throw new Error("Campos requeridos faltantes");
     }
@@ -124,9 +127,14 @@ export async function updatePacienteFromForm(formData: FormData) {
 
     const updated = await updatePaciente(id, updateData);
     
-    // ✅ OPTIMIZACIÓN: Revalidar solo rutas específicas
-    revalidatePath("/pacientes");
-    revalidatePath(`/pacientes/${id}`);
+    // ✅ OPTIMIZACIÓN: Revalidar solo si no se hizo recientemente
+    const now = Date.now();
+    const lastRevalidation = revalidateCache.get(id);
+    
+    if (!lastRevalidation || now - lastRevalidation > 1000) { // 1 segundo
+      revalidatePath(`/dashboard/pacientes/${id}`);
+      revalidateCache.set(id, now);
+    }
     
     return updated;
   } catch (error) {
@@ -151,7 +159,7 @@ export async function createPerfilMedicoAction(pacienteId: string, raw: unknown)
     const rawData = raw as Record<string, unknown>;
     const validatedData = createPerfilMedicoSchema.parse({ pacienteId, ...rawData });
     const perfil = await createPerfilMedico(validatedData);
-    revalidatePath(`/pacientes/${pacienteId}`);
+    revalidatePath(`/dashboard/pacientes/${pacienteId}`);
     return { success: true, data: perfil };
   } catch (error) {
     console.error("Error creating perfil medico:", error);
@@ -164,7 +172,7 @@ export async function updatePerfilMedicoAction(pacienteId: string, raw: unknown)
     const rawData = raw as Record<string, unknown>;
     const validatedData = updatePerfilMedicoSchema.parse(rawData);
     const perfil = await updatePerfilMedico(pacienteId, validatedData);
-    revalidatePath(`/pacientes/${pacienteId}`);
+    revalidatePath(`/dashboard/pacientes/${pacienteId}`);
     return { success: true, data: perfil };
   } catch (error) {
     console.error("Error updating perfil medico:", error);
@@ -194,7 +202,7 @@ export async function createMedicionAction(pacienteId: string, raw: unknown) {
     const rawData = raw as Record<string, unknown>;
     const validatedData = createMedicionSchema.parse({ pacienteId, ...rawData });
     const medicion = await createMedicion(validatedData);
-    revalidatePath(`/pacientes/${pacienteId}`);
+    revalidatePath(`/dashboard/pacientes/${pacienteId}`);
     return { success: true, data: medicion };
   } catch (error) {
     console.error("Error creating medicion:", error);
@@ -207,7 +215,7 @@ export async function updateMedicionAction(id: string, raw: unknown) {
     const rawData = raw as Record<string, unknown>;
     const validatedData = updateMedicionSchema.parse(rawData);
     const medicion = await updateMedicion(id, validatedData);
-    revalidatePath(`/pacientes/${id.split('-')[0]}`); // Revalidar página del paciente
+    revalidatePath(`/dashboard/pacientes/${id.split('-')[0]}`);
     return { success: true, data: medicion };
   } catch (error) {
     console.error("Error updating medicion:", error);
@@ -218,7 +226,7 @@ export async function updateMedicionAction(id: string, raw: unknown) {
 export async function deleteMedicionAction(id: string, pacienteId: string) {
   try {
     await deleteMedicion(id);
-    revalidatePath(`/pacientes/${pacienteId}`);
+    revalidatePath(`/dashboard/pacientes/${pacienteId}`);
     return { success: true };
   } catch (error) {
     console.error("Error deleting medicion:", error);
@@ -256,4 +264,17 @@ export async function getUltimaMedicionAction(pacienteId: string, usuarioId: str
     return { success: false, error: "Error al obtener última medición" };
   }
 }
+
+export async function getPacientesAction(usuarioId: string) {
+  try {
+    const { items } = await listPacientes({ usuarioId, take: 50 });
+    return items;
+  } catch (error) {
+    console.error("Error getting pacientes:", error);
+    throw new Error("Error al obtener los pacientes");
+  }
+}
+
+// ✅ AGREGAR: Cache para evitar revalidaciones innecesarias
+const revalidateCache = new Map<string, number>();
 

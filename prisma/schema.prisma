@@ -49,6 +49,11 @@ model Paciente {
   
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
+
+  // ✅ OPTIMIZACIÓN: Índices para consultas más rápidas
+  @@index([usuarioId, apellido, nombre])
+  @@index([usuarioId, activo])
+  @@index([email])
 }
 
 model PerfilMedico {

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getPacienteAction } from "../actions";
+import { getPacienteAction, getMedicionesAction } from "../actions";
 import { requireAuth } from "@/lib/auth";
 import PerfilMedicoSection from "@/components/pacientes/PerfilMedicoSection";
 import MedicionesSection from "@/components/pacientes/MedicionesSection";
@@ -14,8 +14,11 @@ export default async function PacientePage({ params }: Props) {
   const user = await requireAuth();
   const { id } = await params;
 
-  // Obtener el paciente
-  const paciente = await getPacienteAction(id, user.id);
+  // Obtener el paciente y mediciones en paralelo
+  const [paciente, medicionesResult] = await Promise.all([
+    getPacienteAction(id, user.id),
+    getMedicionesAction(id, user.id)
+  ]);
   
   if (!paciente) {
     notFound();
@@ -33,6 +36,7 @@ export default async function PacientePage({ params }: Props) {
   };
 
   const edad = calcularEdad(paciente.fechaNacimiento);
+  const mediciones = medicionesResult.success ? medicionesResult.data : [];
 
   return (
     <div className="container mx-auto py-6">
@@ -41,7 +45,7 @@ export default async function PacientePage({ params }: Props) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
-              href="/pacientes"
+              href="/dashboard/pacientes"
               className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -51,7 +55,7 @@ export default async function PacientePage({ params }: Props) {
           
           <div className="flex gap-2">
             <Link
-              href={`/pacientes/${id}/editar`}
+              href={`/dashboard/pacientes/${id}/editar`}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Edit className="h-4 w-4" />
@@ -247,12 +251,12 @@ export default async function PacientePage({ params }: Props) {
 
       {/* Sección: Perfil Médico */}
       <section id="perfil-medico" className="mb-8">
-        <PerfilMedicoSection pacienteId={id} />
+        <PerfilMedicoSection pacienteId={id} usuarioId={user.id} />
       </section>
 
-      {/* Sección: Mediciones */}
+      {/* Sección: Mediciones - Pasar datos desde el servidor */}
       <section id="mediciones" className="mb-8">
-        <MedicionesSection pacienteId={id} />
+        <MedicionesSection pacienteId={id} initialMediciones={mediciones} />
       </section>
 
       {/* Sección: Consultas */}

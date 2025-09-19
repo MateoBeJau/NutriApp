@@ -1,6 +1,6 @@
 "use client";
 
-import { createPacienteFromForm } from "@/app/pacientes/actions";
+import { createPacienteFromForm } from "@/app/dashboard/pacientes/actions";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, Mail, Phone, Calendar, Ruler, FileText, X, Save } from "lucide-react";
@@ -32,8 +32,10 @@ export default function FormPaciente({ usuarioId }: Props) {
           action={async (formData) => {
             setSubmitting(true);
             try {
-              await createPacienteFromForm(formData);
-              router.push("/pacientes");
+              const result = await createPacienteFromForm(formData);
+              if (result) {
+                router.push("/dashboard/pacientes");
+              }
             } finally {
               setSubmitting(false);
             }
@@ -174,7 +176,7 @@ export default function FormPaciente({ usuarioId }: Props) {
           <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={() => router.push("/pacientes")}
+              onClick={() => router.push("/dashboard/pacientes")}
               className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
             >
               <X className="h-4 w-4" />

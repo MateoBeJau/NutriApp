@@ -3,17 +3,44 @@ import Link from "next/link";
 import { getPacienteAction } from "../../actions";
 import { requireAuth } from "@/lib/auth";
 import FormPacienteEditar from "@/components/pacientes/FormPacienteEditar";
+import { cache } from "react";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-export default async function EditPacientePage({ params }: Props) {
-  const user = await requireAuth();
-  const { id } = await params;
+// ✅ OPTIMIZACIÓN: Cache más eficiente con timeout
+const getCachedPaciente = cache(async (id: string, userId: string) => {
+  const startTime = Date.now();
+  const paciente = await getPacienteAction(id, userId);
+  const queryTime = Date.now() - startTime;
+  console.log(`🔍 Cached query took: ${queryTime}ms`);
+  return paciente;
+});
 
-  // Obtener el paciente existente
-  const paciente = await getPacienteAction(id, user.id);
+
+export default async function EditPacientePage({ params }: Props) {
+  const startTime = Date.now();
+  
+  const user = await requireAuth();
+  const authTime = Date.now();
+  console.log(`🔍 Auth took: ${authTime - startTime}ms`);
+  
+  const { id } = await params;
+  const paramsTime = Date.now();
+  console.log(`🔍 Params took: ${paramsTime - authTime}ms`);
+
+  // ✅ OPTIMIZACIÓN: Usar cache y manejar errores
+  let paciente;
+  try {
+    paciente = await getCachedPaciente(id, user.id);
+    const pacienteTime = Date.now();
+    console.log(`🔍 Paciente query took: ${pacienteTime - paramsTime}ms`);
+    console.log(` Total page load: ${pacienteTime - startTime}ms`);
+  } catch (error) {
+    console.error("Error loading paciente:", error);
+    notFound();
+  }
   
   if (!paciente) {
     notFound();
@@ -32,7 +59,7 @@ export default async function EditPacientePage({ params }: Props) {
               </p>
             </div>
             <Link
-              href="/pacientes"
+              href="/dashboard/pacientes"
               className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

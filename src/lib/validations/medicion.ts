@@ -3,7 +3,7 @@ import { z } from "zod";
 const emptyToUndef = z.literal("").transform(() => undefined);
 
 export const createMedicionSchema = z.object({
-  pacienteId: z.string().uuid("ID de paciente inválido"), // Cambiado de cuid() a uuid()
+  pacienteId: z.string().min(1, "ID de paciente requerido"), // ✅ CORREGIDO: Aceptar cualquier string, no solo UUID
   fecha: z.coerce.date("Fecha inválida"),
   pesoKg: z.coerce.number().positive("Peso debe ser positivo").optional().or(emptyToUndef),
   alturaCm: z.coerce.number().positive("Altura debe ser positiva").optional().or(emptyToUndef),

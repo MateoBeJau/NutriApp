@@ -11,14 +11,15 @@ export function middleware(request: NextRequest) {
   // Rutas de autenticación
   const isAuthPage = pathname === '/auth/login' || pathname === '/auth/register';
   
-  // Rutas protegidas
-  const isProtectedRoute = pathname.startsWith('/pacientes') ||
-                          pathname.startsWith('/agenda') ||
-                          pathname.startsWith('/planes');
+  // Rutas protegidas - todas bajo /dashboard
+  const isProtectedRoute = pathname.startsWith('/dashboard/pacientes') ||
+                          pathname.startsWith('/dashboard/agenda') ||
+                          pathname.startsWith('/dashboard/planes') ||
+                          pathname.startsWith('/dashboard');
 
   // Redirección más rápida para auth pages
   if (isAuthPage && token) {
-    return NextResponse.redirect(new URL('/pacientes', request.url), { status: 302 });
+    return NextResponse.redirect(new URL('/dashboard', request.url), { status: 302 });
   }
 
   // Redirección más rápida para rutas protegidas

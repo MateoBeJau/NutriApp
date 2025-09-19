@@ -69,7 +69,7 @@ export default async function LoginPage({
               maxAge: 60 * 60 * 24 * 7
             });
 
-            redirect("/pacientes");
+            redirect("/dashboard");
           } catch (error) {
             console.error("Error en login:", error);
             redirect("/auth/login?error=Error interno del servidor");
