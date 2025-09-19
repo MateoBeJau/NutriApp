@@ -1,6 +1,6 @@
 "use client";
 
-import { updatePacienteFromForm } from "@/app/pacientes/actions";
+import { updatePacienteFromForm } from "@/app/dashboard/pacientes/actions";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, Phone, Calendar, Ruler, FileText, X, Save } from "lucide-react";
@@ -51,17 +51,28 @@ export default function FormPacienteEditar({ paciente }: Props) {
     router.back(); // Navegación más rápida que window.location
   };
 
+  // ✅ OPTIMIZACIÓN: Mejor manejo del estado de loading con useTransition
   const handleSubmit = async (formData: FormData) => {
     setError(null);
-    
+
     startTransition(async () => {
       try {
-        await updatePacienteFromForm(formData);
-        // ✅ OPTIMIZACIÓN: Navegación optimizada
-        router.push("/pacientes");
-        router.refresh();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error inesperado");
+        formData.append("id", paciente.id);
+
+        // ✅ OPTIMIZACIÓN: Mostrar feedback inmediato
+        setError(null);
+        
+        const result = await updatePacienteFromForm(formData);
+        
+        if (result) {
+          // ✅ OPTIMIZACIÓN: Redirect inmediato sin esperar
+          router.push(`/dashboard/pacientes/${paciente.id}`);
+        } else {
+          setError("Error al actualizar el paciente");
+        }
+      } catch (error) {
+        console.error("Error updating paciente:", error);
+        setError(error instanceof Error ? error.message : "Error al actualizar el paciente");
       }
     });
   };

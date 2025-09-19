@@ -22,8 +22,24 @@ export async function listPacientes(opts: {
       : {}),
   };
 
+  // ✅ OPTIMIZACIÓN: Usar select específico en lugar de traer todos los campos
   const pacientes = await prisma.paciente.findMany({
     where,
+    select: {
+      id: true,
+      nombre: true,
+      apellido: true,
+      email: true,
+      telefono: true,
+      fechaNacimiento: true,
+      sexo: true,
+      alturaCm: true,
+      notas: true,
+      creadoEn: true,
+      actualizadoEn: true,
+      usuarioId: true,
+      activo: true,
+    },
     orderBy: [{ apellido: "asc" }, { nombre: "asc" }],
     take: take + 1,
     ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
@@ -36,29 +52,41 @@ export async function listPacientes(opts: {
   return { items, nextCursor };
 }
 
+// ✅ OPTIMIZACIÓN: Consulta más eficiente para getPacienteById
 export async function getPacienteById(id: string, usuarioId: string) {
   return prisma.paciente.findFirst({
     where: { id, usuarioId },
+    select: {
+      id: true,
+      nombre: true,
+      apellido: true,
+      email: true,
+      telefono: true,
+      fechaNacimiento: true,
+      sexo: true,
+      alturaCm: true,
+      notas: true,
+      creadoEn: true,
+      actualizadoEn: true,
+      usuarioId: true,
+      activo: true,
+    },
   });
 }
 
 export async function createPaciente(input: CreatePacienteInput) {
-  // NO validar aquí - ya viene validado del action
   return prisma.paciente.create({ data: input });
 }
 
 export async function updatePaciente(id: string, input: UpdatePacienteInput) {
-  // NO validar aquí - ya viene validado del action
   return prisma.paciente.update({
     where: { id },
     data: input,
   });
 }
 
-// ✅ OPTIMIZACIÓN: Eliminar con una sola query
 export async function deletePaciente(id: string, usuarioId?: string) {
   if (usuarioId) {
-    // Usar deleteMany con condiciones para una sola query
     const result = await prisma.paciente.deleteMany({
       where: { id, usuarioId }
     });

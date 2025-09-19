@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { getPerfilMedicoAction, updatePerfilMedicoAction } from "@/app/pacientes/actions";
+import { useState, useEffect, useCallback } from "react";
+import { getPerfilMedicoAction, updatePerfilMedicoAction } from "@/app/dashboard/pacientes/actions";
 import { Edit, Save, X, Heart, HeartOff, AlertTriangle, Pill, Target, FileText, Utensils } from "lucide-react";
 
 interface PerfilMedicoSectionProps {
   pacienteId: string;
+  usuarioId: string; // ✅ AGREGAR: usuarioId como prop
 }
 
 interface PerfilMedico {
@@ -21,8 +21,7 @@ interface PerfilMedico {
   observaciones?: string | null;
 }
 
-export default function PerfilMedicoSection({ pacienteId }: PerfilMedicoSectionProps) {
-  const router = useRouter();
+export default function PerfilMedicoSection({ pacienteId, usuarioId }: PerfilMedicoSectionProps) {
   const [perfil, setPerfil] = useState<PerfilMedico | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -38,14 +37,13 @@ export default function PerfilMedicoSection({ pacienteId }: PerfilMedicoSectionP
     observaciones: "",
   });
 
-  useEffect(() => {
-    loadPerfil();
-  }, [pacienteId]);
-
-  const loadPerfil = async () => {
+  // ✅ OPTIMIZACIÓN: useCallback para evitar re-renders innecesarios
+  const loadPerfil = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
-      const result = await getPerfilMedicoAction(pacienteId, "current-user-id"); // TODO: Get from auth
+      if (showLoading) {
+        setLoading(true);
+      }
+      const result = await getPerfilMedicoAction(pacienteId, usuarioId); // ✅ CORREGIDO: usar usuarioId real
       
       if (result.success && result.data) {
         setPerfil(result.data);
@@ -76,17 +74,25 @@ export default function PerfilMedicoSection({ pacienteId }: PerfilMedicoSectionP
       console.error("Error loading perfil:", error);
       setPerfil(null);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
-  };
+  }, [pacienteId, usuarioId]); // ✅ CORREGIDO: agregar usuarioId a las dependencias
 
-  const handleSave = async () => {
+  useEffect(() => {
+    loadPerfil();
+  }, [loadPerfil]);
+
+  // ✅ OPTIMIZACIÓN: useCallback para evitar re-renders
+  const handleSave = useCallback(async () => {
     try {
       setSaving(true);
       const result = await updatePerfilMedicoAction(pacienteId, formData);
       
       if (result.success && result.data) {
-        setPerfil(result.data);
+        // ✅ CORREGIDO: Recargar datos desde el servidor después de guardar (sin mostrar loading)
+        await loadPerfil(false);
         setIsEditing(false);
       } else {
         console.error("Error guardando perfil:", result.error);
@@ -96,9 +102,10 @@ export default function PerfilMedicoSection({ pacienteId }: PerfilMedicoSectionP
     } finally {
       setSaving(false);
     }
-  };
+  }, [pacienteId, formData, loadPerfil]);
 
-  const handleCancel = () => {
+  // ✅ OPTIMIZACIÓN: useCallback para evitar re-renders
+  const handleCancel = useCallback(() => {
     if (perfil) {
       setFormData({
         gustos: perfil.gustos || "",
@@ -123,7 +130,12 @@ export default function PerfilMedicoSection({ pacienteId }: PerfilMedicoSectionP
       });
     }
     setIsEditing(false);
-  };
+  }, [perfil]);
+
+  // ✅ OPTIMIZACIÓN: Memoizar handlers de input
+  const handleInputChange = useCallback((field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
 
   if (loading) {
     return (
@@ -182,7 +194,7 @@ export default function PerfilMedicoSection({ pacienteId }: PerfilMedicoSectionP
               {isEditing ? (
                 <textarea
                   value={formData.gustos}
-                  onChange={(e) => setFormData({ ...formData, gustos: e.target.value })}
+                  onChange={(e) => handleInputChange('gustos', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                   placeholder="Comidas que le gustan..."
@@ -201,7 +213,7 @@ export default function PerfilMedicoSection({ pacienteId }: PerfilMedicoSectionP
               {isEditing ? (
                 <textarea
                   value={formData.disgustos}
-                  onChange={(e) => setFormData({ ...formData, disgustos: e.target.value })}
+                  onChange={(e) => handleInputChange('disgustos', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                   placeholder="Comidas que no le gustan..."
@@ -230,7 +242,7 @@ export default function PerfilMedicoSection({ pacienteId }: PerfilMedicoSectionP
               {isEditing ? (
                 <textarea
                   value={formData.alergias}
-                  onChange={(e) => setFormData({ ...formData, alergias: e.target.value })}
+                  onChange={(e) => handleInputChange('alergias', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                   placeholder="Alergias alimentarias o ambientales..."
@@ -249,7 +261,7 @@ export default function PerfilMedicoSection({ pacienteId }: PerfilMedicoSectionP
               {isEditing ? (
                 <textarea
                   value={formData.enfermedades}
-                  onChange={(e) => setFormData({ ...formData, enfermedades: e.target.value })}
+                  onChange={(e) => handleInputChange('enfermedades', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                   placeholder="Condiciones médicas existentes..."
@@ -268,7 +280,7 @@ export default function PerfilMedicoSection({ pacienteId }: PerfilMedicoSectionP
               {isEditing ? (
                 <textarea
                   value={formData.medicamentos}
-                  onChange={(e) => setFormData({ ...formData, medicamentos: e.target.value })}
+                  onChange={(e) => handleInputChange('medicamentos', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                   placeholder="Medicamentos que toma actualmente..."
@@ -298,7 +310,7 @@ export default function PerfilMedicoSection({ pacienteId }: PerfilMedicoSectionP
                 <input
                   type="text"
                   value={formData.restricciones}
-                  onChange={(e) => setFormData({ ...formData, restricciones: e.target.value })}
+                  onChange={(e) => handleInputChange('restricciones', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Vegano, sin gluten, etc..."
                 />
@@ -317,7 +329,7 @@ export default function PerfilMedicoSection({ pacienteId }: PerfilMedicoSectionP
                 <input
                   type="text"
                   value={formData.objetivos}
-                  onChange={(e) => setFormData({ ...formData, objetivos: e.target.value })}
+                  onChange={(e) => handleInputChange('objetivos', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Bajar peso, ganar masa muscular..."
                 />
@@ -336,7 +348,7 @@ export default function PerfilMedicoSection({ pacienteId }: PerfilMedicoSectionP
             {isEditing ? (
               <textarea
                 value={formData.observaciones}
-                onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
+                onChange={(e) => handleInputChange('observaciones', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={4}
                 placeholder="Notas adicionales del nutricionista..."
