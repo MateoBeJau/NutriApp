@@ -59,8 +59,8 @@ export default function Navbar({ user }: NavbarProps) {
             onClick={() => setIsProfileOpen(!isProfileOpen)}
           >
             <span className="sr-only">Abrir menú de usuario</span>
-            <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-              <User className="h-5 w-5 text-white" />
+            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+              <User className="h-4 w-4 text-gray-600" />
             </div>
             <span className="hidden lg:flex lg:items-center">
               <span className="ml-4 text-sm font-semibold leading-6 text-gray-900">
@@ -71,18 +71,25 @@ export default function Navbar({ user }: NavbarProps) {
 
           {/* Dropdown menu */}
           {isProfileOpen && (
-            <div className="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
+            <div className="absolute right-0 z-10 mt-2.5 w-48 origin-top-right rounded-xl bg-white py-2 shadow-lg ring-1 ring-gray-900/5 border border-gray-200 focus:outline-none">
+              <div className="px-3 py-2 border-b border-gray-100">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {user.nombre || user.email}
+                </p>
+                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              </div>
               <Link
                 href="/dashboard/perfil"
-                className="block px-3 py-1 text-sm leading-6 text-gray-900 hover:bg-gray-50"
+                className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
+                <User className="h-4 w-4 mr-2 text-gray-400" />
                 Mi perfil
               </Link>
               <button
                 onClick={handleLogout}
-                className="block w-full text-left px-3 py-1 text-sm leading-6 text-gray-900 hover:bg-gray-50"
+                className="flex items-center w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <LogOut className="h-4 w-4 inline mr-2" />
+                <LogOut className="h-4 w-4 mr-2 text-gray-400" />
                 Cerrar sesión
               </button>
             </div>

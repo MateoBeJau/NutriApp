@@ -1,5 +1,5 @@
 // components/pacientes/PacientesTable.tsx
-import { Eye, Edit, Trash2, Phone, Mail, Calendar, Ruler, User } from "lucide-react";
+import { Trash2, Phone, Mail, Calendar, Ruler } from "lucide-react";
 import Link from "next/link";
 
 type PacienteRow = {
@@ -20,15 +20,17 @@ type PacienteRow = {
 export default function PacientesTable({ pacientes }: { pacientes: PacienteRow[]  }) {
   if (!pacientes.length) {
     return (
-      <div className="text-center py-12">
-        <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <User className="h-12 w-12 text-gray-400" />
+      <div className="text-center py-16">
+        <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+          </svg>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No hay pacientes</h3>
-        <p className="text-gray-600 mb-6">Comienza agregando tu primer paciente para gestionar su información nutricional</p>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Sin pacientes registrados</h3>
+        <p className="text-gray-500 mb-6">Agrega tu primer paciente para comenzar a gestionar la información nutricional</p>
         <Link
-          href="/pacientes/nuevo"
-          className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          href="/dashboard/pacientes/nuevo"
+          className="inline-flex items-center px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-800 transition-colors"
         >
           Agregar primer paciente
         </Link>
@@ -69,8 +71,8 @@ export default function PacientesTable({ pacientes }: { pacientes: PacienteRow[]
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <span className="text-sm font-medium text-indigo-600">
+                        <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                          <span className="text-sm font-medium text-gray-600">
                             {p.nombre.charAt(0)}{p.apellido.charAt(0)}
                           </span>
                         </div>
@@ -79,7 +81,7 @@ export default function PacientesTable({ pacientes }: { pacientes: PacienteRow[]
                         <div className="text-sm font-medium text-gray-900">
                           {p.nombre} {p.apellido}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-xs text-gray-400">
                           ID: {p.id.slice(0, 8)}...
                         </div>
                       </div>
@@ -140,7 +142,7 @@ export default function PacientesTable({ pacientes }: { pacientes: PacienteRow[]
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/dashboard/pacientes/${p.id}`}
-                        className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                        className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                         title="Ver detalles"
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,7 +152,7 @@ export default function PacientesTable({ pacientes }: { pacientes: PacienteRow[]
                       </Link>
                       <Link
                         href={`/dashboard/pacientes/${p.id}/editar`}
-                        className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                        className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                         title="Editar paciente"
                       >
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -158,12 +160,11 @@ export default function PacientesTable({ pacientes }: { pacientes: PacienteRow[]
                         </svg>
                       </Link>
                       <button
-                        className="inline-flex items-center px-3 py-1.5 border border-red-300 text-red-700 rounded-md hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center p-2 text-gray-300 cursor-not-allowed rounded-lg"
                         disabled
                         title="Próximamente"
                       >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Eliminar
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>

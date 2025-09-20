@@ -12,28 +12,24 @@ export default async function DashboardPage() {
       name: "Total Pacientes",
       value: pacientes.length,
       icon: Users,
-      color: "bg-blue-500",
       href: "/dashboard/pacientes"
     },
     {
       name: "Consultas Hoy",
       value: 0,
       icon: Calendar,
-      color: "bg-green-500",
       href: "/dashboard/agenda"
     },
     {
       name: "Planes Activos",
       value: 0,
       icon: FileText,
-      color: "bg-yellow-500",
       href: "/dashboard/planes"
     },
     {
       name: "Crecimiento",
       value: "+12%",
       icon: TrendingUp,
-      color: "bg-purple-500",
       href: "/dashboard/reportes"
     }
   ];
@@ -48,71 +44,94 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+      {/* Stats Grid - Diseño Minimalista */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
         {stats.map((stat) => (
           <Link
             key={stat.name}
             href={stat.href}
-            className="relative overflow-hidden rounded-lg bg-white px-4 py-5 shadow hover:shadow-md transition-shadow"
+            className="group relative bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 hover:shadow-sm transition-all duration-200"
           >
-            <dt>
-              <div className={`absolute rounded-md p-3 ${stat.color}`}>
-                <stat.icon className="h-6 w-6 text-white" aria-hidden="true" />
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-500 mb-1">
+                  {stat.name}
+                </p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stat.value}
+                </p>
               </div>
-              <p className="ml-16 truncate text-sm font-medium text-gray-500">
-                {stat.name}
-              </p>
-            </dt>
-            <dd className="ml-16 flex items-baseline">
-              <p className="text-2xl font-semibold text-gray-900">
-                {stat.value}
-              </p>
-            </dd>
+              <div className="flex-shrink-0 w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center group-hover:bg-gray-100 transition-colors">
+                <stat.icon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              </div>
+            </div>
+            <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-gray-100 to-gray-200 rounded-b-xl group-hover:from-gray-200 group-hover:to-gray-300 transition-colors"></div>
           </Link>
         ))}
       </div>
 
-      {/* Recent Patients */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            Pacientes Recientes
-          </h3>
+      {/* Recent Patients - Diseño Minimalista */}
+      <div className="bg-white rounded-xl border border-gray-200">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0 w-5 h-5">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+              </div>
+              <h3 className="text-sm font-medium text-gray-900">Pacientes recientes</h3>
+            </div>
+            <Link
+              href="/dashboard/pacientes"
+              className="text-xs text-gray-500 hover:text-gray-700 font-medium"
+            >
+              Ver todos →
+            </Link>
+          </div>
+
           {pacientes.length > 0 ? (
             <div className="space-y-3">
-              {pacientes.slice(0, 5).map((paciente: any) => (
+              {pacientes.slice(0, 5).map((paciente) => (
                 <div
                   key={paciente.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
                 >
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Users className="h-5 w-5 text-blue-600" />
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-shrink-0 w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-medium text-gray-600">
+                        {paciente.nombre.charAt(0)}{paciente.apellido.charAt(0)}
+                      </span>
                     </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-900">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
                         {paciente.nombre} {paciente.apellido}
                       </p>
-                      <p className="text-sm text-gray-500">{paciente.email}</p>
+                      {paciente.email && (
+                        <p className="text-xs text-gray-500 truncate">{paciente.email}</p>
+                      )}
                     </div>
                   </div>
                   <Link
                     href={`/dashboard/pacientes/${paciente.id}`}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-400 hover:text-gray-600 font-medium"
                   >
-                    Ver perfil
+                    Ver →
                   </Link>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No hay pacientes registrados</p>
+            <div className="text-center py-12">
+              <div className="w-12 h-12 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+              </div>
+              <p className="text-sm text-gray-500 mb-4">Sin pacientes registrados</p>
               <Link
                 href="/dashboard/pacientes/nuevo"
-                className="mt-2 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="inline-flex items-center px-4 py-2 bg-gray-900 text-white text-sm rounded-lg hover:bg-gray-800 transition-colors"
               >
                 Agregar primer paciente
               </Link>
