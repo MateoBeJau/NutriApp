@@ -110,3 +110,37 @@ export async function cambiarEstadoConsultaAction(consultaId: string, nuevoEstad
     return { success: false, error: 'Error al cambiar el estado' }
   }
 }
+
+export async function agregarMedicionConsultaAction(datos: {
+  consultaId: string
+  pacienteId: string
+  pesoKg?: number
+  alturaCm?: number
+  imc?: number
+  notas?: string
+}) {
+  const user = await getCurrentUser()
+  
+  if (!user) {
+    redirect('/auth/login')
+  }
+
+  try {
+    // Importar el servicio de mediciones
+    const { createMedicionAction } = await import('@/app/dashboard/pacientes/actions')
+    
+    const resultado = await createMedicionAction(datos.pacienteId, {
+      consultaId: datos.consultaId, // ✅ Asociar a la consulta
+      fecha: new Date(),
+      pesoKg: datos.pesoKg,
+      alturaCm: datos.alturaCm,
+      imc: datos.imc,
+      notas: datos.notas
+    })
+    
+    return { success: true, medicion: resultado }
+  } catch (error) {
+    console.error('Error al agregar medición a consulta:', error)
+    return { success: false, error: 'Error al agregar la medición' }
+  }
+}

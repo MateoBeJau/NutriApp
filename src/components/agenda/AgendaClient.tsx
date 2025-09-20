@@ -5,7 +5,10 @@ import { ConsultaConPaciente, EstadoConsulta } from '@/types/consulta'
 import Button from '@/components/ui/Button'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { FormularioConsulta } from '@/components/consultas/FormularioConsulta'
+import MedicionesConsulta from '@/components/consultas/MedicionesConsulta'
 import { obtenerConsultasDelDia, crearConsultaAction, actualizarConsultaAction, cambiarEstadoConsultaAction } from '@/app/dashboard/agenda/server-actions'
+import { buscarConsultaPorIdAction } from '@/app/dashboard/agenda/buscar-consulta-actions'
+import { useSearchParams } from 'next/navigation'
 
 interface AgendaClientProps {
   usuarioId: string
@@ -18,12 +21,15 @@ export function AgendaClient({ usuarioId }: AgendaClientProps) {
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [consultaSeleccionada, setConsultaSeleccionada] = useState<ConsultaConPaciente | null>(null)
   const [modoEdicion, setModoEdicion] = useState(false)
+  const searchParams = useSearchParams()
 
   // Obtener consultas del día seleccionado
   const cargarConsultas = async (fecha: Date) => {
     try {
       setCargando(true)
+      console.log('📊 Cargando consultas para:', fecha.toDateString())
       const consultasDelDia = await obtenerConsultasDelDia(fecha)
+      console.log('📊 Consultas cargadas:', consultasDelDia.length, consultasDelDia.map(c => c.id))
       setConsultas(consultasDelDia)
     } catch (error) {
       console.error('Error al cargar consultas:', error)
@@ -35,6 +41,64 @@ export function AgendaClient({ usuarioId }: AgendaClientProps) {
   useEffect(() => {
     cargarConsultas(fechaSeleccionada)
   }, [fechaSeleccionada, usuarioId])
+
+  // ✅ Manejar parámetros de URL para establecer fecha inicial
+  useEffect(() => {
+    const fechaParam = searchParams.get('fecha')
+    const consultaParam = searchParams.get('consulta')
+
+    console.log('🔍 Parámetros de URL detectados:', { fecha: fechaParam, consulta: consultaParam })
+
+    // Si hay una fecha en la URL, establecerla solo una vez al cargar
+    if (fechaParam) {
+      const fechaDesdeUrl = new Date(fechaParam)
+      if (!isNaN(fechaDesdeUrl.getTime())) {
+        console.log('📅 Estableciendo fecha desde URL:', fechaDesdeUrl)
+        setFechaSeleccionada(fechaDesdeUrl)
+      }
+    }
+  }, [searchParams]) // Solo depende de searchParams, no de consultas
+
+  // ✅ Manejar apertura de consulta específica cuando se cargan las consultas
+  useEffect(() => {
+    const consultaParam = searchParams.get('consulta')
+
+    // Si hay una consulta específica y las consultas ya se cargaron, abrirla
+    if (consultaParam && !cargando && !consultaSeleccionada) {
+      // Primero buscar en las consultas actuales
+      const consultaEncontrada = consultas.find(c => c.id === consultaParam)
+      
+      if (consultaEncontrada) {
+        console.log('🎯 Consulta encontrada en día actual, abriendo modal:', consultaEncontrada.id)
+        setConsultaSeleccionada(consultaEncontrada)
+        setModoEdicion(false)
+        
+        // Limpiar los parámetros de URL para evitar loops
+        const url = new URL(window.location.href)
+        url.searchParams.delete('consulta')
+        window.history.replaceState({}, '', url.toString())
+      } else {
+        // Si no se encuentra en el día actual, buscar por ID directamente
+        console.log('🔍 Consulta no encontrada en día actual, buscando por ID:', consultaParam)
+        buscarConsultaPorIdAction(consultaParam).then((consultaEncontrada) => {
+          if (consultaEncontrada) {
+            console.log('🎯 Consulta encontrada por ID, abriendo modal:', consultaEncontrada.id)
+            setConsultaSeleccionada(consultaEncontrada)
+            setModoEdicion(false)
+            
+            // Limpiar los parámetros de URL para evitar loops
+            const url = new URL(window.location.href)
+            url.searchParams.delete('consulta')
+            window.history.replaceState({}, '', url.toString())
+          } else {
+            console.error('❌ Consulta no encontrada:', consultaParam)
+          }
+        }).catch(error => {
+          console.error('❌ Error al buscar consulta:', error)
+        })
+      }
+    }
+  }, [consultas, cargando, consultaSeleccionada, searchParams])
 
   const formatearHora = (fecha: Date) => {
     return new Date(fecha).toLocaleTimeString('es-ES', {
@@ -423,9 +487,12 @@ export function AgendaClient({ usuarioId }: AgendaClientProps) {
                 // Modo visualización
                 <div>
                   {/* Acciones rápidas de estado */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">🚦 Cambiar Estado</h3>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="mb-8 pt-6 border-t border-gray-100">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-medium text-gray-900">Cambiar estado de la consulta</h3>
+                      <span className="text-xs text-gray-500">Estado actual: {consultaSeleccionada.estado}</span>
+                    </div>
+                    <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
                       {Object.values(EstadoConsulta).map((estado) => (
                         <Button
                           key={estado}
@@ -433,7 +500,7 @@ export function AgendaClient({ usuarioId }: AgendaClientProps) {
                           size="sm"
                           onClick={() => handleCambiarEstado(estado)}
                           disabled={consultaSeleccionada.estado === estado}
-                          className={`${consultaSeleccionada.estado === estado ? 'cursor-not-allowed opacity-50' : ''}`}
+                          className={`text-xs ${consultaSeleccionada.estado === estado ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-50'}`}
                         >
                           {estado === 'PROGRAMADO' && '📅'}
                           {estado === 'CONFIRMADO' && '✅'}
@@ -441,75 +508,104 @@ export function AgendaClient({ usuarioId }: AgendaClientProps) {
                           {estado === 'AUSENTE' && '👻'}
                           {estado === 'COMPLETADO' && '✨'}
                           {estado === 'REAGENDADO' && '🔄'}
-                          {' '}
-                          {estado}
+                          <span className="ml-1 hidden sm:inline">{estado}</span>
                         </Button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Detalles de la consulta */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Información del paciente */}
-                    <div className="bg-blue-50 rounded-xl p-6">
-                      <h3 className="text-lg font-semibold text-blue-900 mb-4">👤 Información del Paciente</h3>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-blue-700 mb-1">Nombre Completo</label>
-                          <p className="text-blue-900 font-medium">
-                            {consultaSeleccionada.paciente.nombre} {consultaSeleccionada.paciente.apellido}
-                          </p>
+                  {/* Información de la consulta - Diseño minimalista */}
+                  <div className="space-y-6">
+                    {/* Info principal en una línea limpia */}
+                    <div className="flex items-center justify-between py-4 border-b border-gray-100">
+                      <div className="flex items-center space-x-6">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-gray-900">
+                            {formatearHora(consultaSeleccionada.inicio)}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {formatearHora(consultaSeleccionada.fin)}
+                          </div>
                         </div>
-                        {consultaSeleccionada.paciente.email && (
-                          <div>
-                            <label className="block text-sm font-medium text-blue-700 mb-1">Email</label>
-                            <p className="text-blue-800">{consultaSeleccionada.paciente.email}</p>
-                          </div>
-                        )}
-                        {consultaSeleccionada.paciente.telefono && (
-                          <div>
-                            <label className="block text-sm font-medium text-blue-700 mb-1">Teléfono</label>
-                            <p className="text-blue-800">{consultaSeleccionada.paciente.telefono}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Detalles de la consulta */}
-                    <div className="bg-green-50 rounded-xl p-6">
-                      <h3 className="text-lg font-semibold text-green-900 mb-4">📋 Detalles de la Consulta</h3>
-                      <div className="space-y-3">
+                        
+                        <div className="h-8 w-px bg-gray-200"></div>
+                        
                         <div>
-                          <label className="block text-sm font-medium text-green-700 mb-1">Horario</label>
-                          <p className="text-green-900 font-medium">
-                            {formatearHora(consultaSeleccionada.inicio)} - {formatearHora(consultaSeleccionada.fin)}
-                          </p>
+                          <div className="text-sm text-gray-500">Paciente</div>
+                          <div className="font-semibold text-gray-900">
+                            {consultaSeleccionada.paciente.nombre} {consultaSeleccionada.paciente.apellido}
+                          </div>
                         </div>
                         
                         {consultaSeleccionada.lugar && (
-                          <div>
-                            <label className="block text-sm font-medium text-green-700 mb-1">Lugar</label>
-                            <p className="text-green-800">📍 {consultaSeleccionada.lugar}</p>
+                          <>
+                            <div className="h-8 w-px bg-gray-200"></div>
+                            <div>
+                              <div className="text-sm text-gray-500">Lugar</div>
+                              <div className="font-medium text-gray-900">{consultaSeleccionada.lugar}</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="text-sm text-gray-500 mb-1">Estado</div>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${obtenerColorEstado(consultaSeleccionada.estado)}`}>
+                          {consultaSeleccionada.estado}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Contacto del paciente - Solo si existe */}
+                    {(consultaSeleccionada.paciente.email || consultaSeleccionada.paciente.telefono) && (
+                      <div className="flex items-center space-x-8 py-3 bg-gray-50 rounded-lg px-4">
+                        {consultaSeleccionada.paciente.email && (
+                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span>{consultaSeleccionada.paciente.email}</span>
                           </div>
                         )}
                         
-                        <div>
-                          <label className="block text-sm font-medium text-green-700 mb-1">Estado Actual</label>
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${obtenerColorEstado(consultaSeleccionada.estado)}`}>
-                            {consultaSeleccionada.estado}
-                          </span>
-                        </div>
+                        {consultaSeleccionada.paciente.telefono && (
+                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                            </svg>
+                            <span>{consultaSeleccionada.paciente.telefono}</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Notas */}
                   {consultaSeleccionada.notas && (
-                    <div className="mt-8 bg-yellow-50 rounded-xl p-6">
-                      <h3 className="text-lg font-semibold text-yellow-900 mb-4">📝 Notas</h3>
-                      <p className="text-yellow-800 leading-relaxed">{consultaSeleccionada.notas}</p>
+                    <div className="mt-8 pt-6 border-t border-gray-100">
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 w-5 h-5 mt-0.5">
+                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900 mb-2">Notas de la consulta</h4>
+                          <p className="text-gray-700 leading-relaxed">{consultaSeleccionada.notas}</p>
+                        </div>
+                      </div>
                     </div>
                   )}
+
+                  {/* Mediciones de la consulta */}
+                  <div className="mt-8">
+                    <MedicionesConsulta
+                      consultaId={consultaSeleccionada.id}
+                      pacienteId={consultaSeleccionada.pacienteId}
+                      medicionesExistentes={consultaSeleccionada.mediciones || []}
+                      onMedicionAgregada={() => cargarConsultas(fechaSeleccionada)}
+                    />
+                  </div>
 
                   {/* Botones de acción */}
                   <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">

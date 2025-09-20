@@ -18,12 +18,12 @@ export default function FormPaciente({ usuarioId }: Props) {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-indigo-100 rounded-lg">
-            <UserPlus className="h-6 w-6 text-indigo-600" />
+          <div className="p-2 bg-gray-100 rounded-lg">
+            <UserPlus className="h-6 w-6 text-gray-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Nuevo Paciente</h1>
         </div>
-        <p className="text-gray-600">Completa la información del paciente para agregarlo a tu lista</p>
+        <p className="text-gray-500">Completa la información del paciente para agregarlo a tu lista</p>
       </div>
 
       {/* Form */}
@@ -60,7 +60,7 @@ export default function FormPaciente({ usuarioId }: Props) {
                   <input
                     name="nombre"
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition-colors"
                     placeholder="Ana"
                   />
                 </div>
@@ -74,7 +74,7 @@ export default function FormPaciente({ usuarioId }: Props) {
                   <input
                     name="apellido"
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition-colors"
                     placeholder="García"
                   />
                 </div>
@@ -90,7 +90,7 @@ export default function FormPaciente({ usuarioId }: Props) {
                 <input
                   type="email"
                   name="email"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition-colors"
                   placeholder="ana@email.com"
                 />
               </div>
@@ -102,7 +102,7 @@ export default function FormPaciente({ usuarioId }: Props) {
                 </label>
                 <input
                   name="telefono"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition-colors"
                   placeholder="+598 99 123 456"
                 />
               </div>
@@ -125,7 +125,7 @@ export default function FormPaciente({ usuarioId }: Props) {
                 <input
                   type="date"
                   name="fechaNacimiento"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition-colors"
                 />
               </div>
 
@@ -133,7 +133,7 @@ export default function FormPaciente({ usuarioId }: Props) {
                 <label className="block text-sm font-medium text-gray-700">Sexo</label>
                 <select
                   name="sexo"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition-colors"
                 >
                   <option value="">Seleccionar...</option>
                   <option value="F">Femenino</option>
@@ -152,7 +152,7 @@ export default function FormPaciente({ usuarioId }: Props) {
                   type="number"
                   min="50"
                   max="300"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition-colors"
                   placeholder="170"
                 />
               </div>
@@ -166,7 +166,7 @@ export default function FormPaciente({ usuarioId }: Props) {
               <textarea
                 name="notas"
                 rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-gray-400 transition-colors resize-none"
                 placeholder="Alergias, condiciones médicas, objetivos nutricionales, etc..."
               />
             </div>
@@ -185,7 +185,7 @@ export default function FormPaciente({ usuarioId }: Props) {
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+              className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
               <Save className="h-4 w-4" />
               {submitting ? "Guardando..." : "Guardar Paciente"}

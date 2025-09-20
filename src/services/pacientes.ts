@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { CreatePacienteInput, UpdatePacienteInput } from "@/lib/validations/paciente";
+import { measurePerformance } from "@/lib/performance";
 
 export async function listPacientes(opts: {
   usuarioId: string;
@@ -52,26 +53,44 @@ export async function listPacientes(opts: {
   return { items, nextCursor };
 }
 
-// ✅ OPTIMIZACIÓN: Consulta más eficiente para getPacienteById
+// ✅ OPTIMIZACIÓN: Consulta más eficiente para getPacienteById con timeout y medición
 export async function getPacienteById(id: string, usuarioId: string) {
-  return prisma.paciente.findFirst({
-    where: { id, usuarioId },
-    select: {
-      id: true,
-      nombre: true,
-      apellido: true,
-      email: true,
-      telefono: true,
-      fechaNacimiento: true,
-      sexo: true,
-      alturaCm: true,
-      notas: true,
-      creadoEn: true,
-      actualizadoEn: true,
-      usuarioId: true,
-      activo: true,
-    },
-  });
+  return measurePerformance(async () => {
+    // ✅ Usar findUnique es más eficiente que findFirst para búsquedas por ID
+    const queryPromise = prisma.paciente.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        nombre: true,
+        apellido: true,
+        email: true,
+        telefono: true,
+        fechaNacimiento: true,
+        sexo: true,
+        alturaCm: true,
+        notas: true,
+        creadoEn: true,
+        actualizadoEn: true,
+        usuarioId: true,
+        activo: true,
+      },
+    });
+
+    // ✅ Timeout de 5 segundos para evitar queries que cuelguen
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Database query timeout after 5 seconds')), 5000)
+    );
+
+    const result = await Promise.race([queryPromise, timeoutPromise]);
+    
+    // ✅ Verificar que el paciente pertenece al usuario y está activo
+    if (!result || (result as any).usuarioId !== usuarioId || !(result as any).activo) {
+      console.log(`⚠️ No valid patient found with id: ${id} for user: ${usuarioId}`);
+      return null;
+    }
+    
+    return result;
+  }, `getPacienteById(${id})`);
 }
 
 export async function createPaciente(input: CreatePacienteInput) {

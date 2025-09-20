@@ -9,13 +9,21 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
-// ✅ OPTIMIZACIÓN: Cache más eficiente con timeout
+// ✅ OPTIMIZACIÓN: Cache más eficiente con timeout y error handling
 const getCachedPaciente = cache(async (id: string, userId: string) => {
   const startTime = Date.now();
-  const paciente = await getPacienteAction(id, userId);
-  const queryTime = Date.now() - startTime;
-  console.log(`🔍 Cached query took: ${queryTime}ms`);
-  return paciente;
+  console.log(`🔍 Starting cached query for patient: ${id}`);
+  
+  try {
+    const paciente = await getPacienteAction(id, userId);
+    const queryTime = Date.now() - startTime;
+    console.log(`✅ Cached query completed in: ${queryTime}ms`);
+    return paciente;
+  } catch (error) {
+    const queryTime = Date.now() - startTime;
+    console.error(`❌ Cached query failed after ${queryTime}ms:`, error);
+    throw error;
+  }
 });
 
 

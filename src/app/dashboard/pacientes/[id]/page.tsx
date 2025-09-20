@@ -4,7 +4,8 @@ import { getPacienteAction, getMedicionesAction } from "../actions";
 import { requireAuth } from "@/lib/auth";
 import PerfilMedicoSection from "@/components/pacientes/PerfilMedicoSection";
 import MedicionesSection from "@/components/pacientes/MedicionesSection";
-import { Calendar, Mail, Phone, Ruler, User, Edit, ArrowLeft, Clock, MapPin, Calendar as CalendarIcon } from "lucide-react";
+import ConsultasSection from "@/components/pacientes/ConsultasSection";
+import { Calendar, Mail, Phone, Ruler, User, Edit, ArrowLeft, Calendar as CalendarIcon } from "lucide-react";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -260,15 +261,11 @@ export default async function PacientePage({ params }: Props) {
       </section>
 
       {/* Sección: Consultas */}
-      <section id="consultas" className="mb-8">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Consultas</h2>
-          <div className="text-center py-8 text-gray-500">
-            <Clock className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-            <p>Funcionalidad de consultas en desarrollo</p>
-          </div>
-        </div>
-      </section>
+      <ConsultasSection 
+        pacienteId={paciente.id}
+        pacienteNombre={paciente.nombre}
+        pacienteApellido={paciente.apellido}
+      />
     </div>
   );
 }
