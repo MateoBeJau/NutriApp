@@ -14,6 +14,233 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+enum TipoPlan {
+  MANUAL
+  GENERADO_IA
+}
+
+enum EstadoPlan {
+  BORRADOR
+  ACTIVO
+  PAUSADO
+  COMPLETADO
+  CANCELADO
+}
+
+enum TipoComida {
+  DESAYUNO
+  MEDIA_MANANA
+  ALMUERZO
+  MERIENDA
+  CENA
+  COLACION_NOCTURNA
+}
+
+model PlanNutricional {
+  id          String     @id @default(cuid())
+  pacienteId  String
+  usuarioId   String     // El nutricionista que creó el plan
+  
+  // Información básica del plan
+  nombre      String     // ej: "Plan de pérdida de peso - Enero 2024"
+  descripcion String?    // Descripción general del plan
+  tipo        TipoPlan   @default(MANUAL)
+  estado      EstadoPlan @default(BORRADOR)
+  
+  // Fechas de vigencia
+  fechaInicio DateTime
+  fechaFin    DateTime?  // Opcional, algunos planes pueden ser indefinidos
+  
+  // Información nutricional objetivo (opcional)
+  caloriasObjetivo      Int?
+  proteinasObjetivo     Float? // en gramos
+  carbohidratosObjetivo Float? // en gramos  
+  grasasObjetivo        Float? // en gramos
+  
+  // Notas del nutricionista
+  notas       String?
+  
+  // Metadatos de IA (si fue generado con IA)
+  promptIA    String?    // El prompt usado para generar el plan
+  modeloIA    String?    // GPT-4, Claude, etc.
+  
+  // ✅ NUEVO: Restricciones aplicadas del perfil médico
+  restriccionesAplicadas String? // JSON con las restricciones que se consideraron
+  
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  
+  // Relaciones
+  paciente      Paciente        @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  usuario       Usuario         @relation(fields: [usuarioId], references: [id])
+  comidas       ComidaPlan[]
+  seguimientos  SeguimientoPlan[]
+  
+  @@index([pacienteId, estado])
+  @@index([usuarioId, fechaInicio])
+}
+
+model ComidaPlan {
+  id               String      @id @default(cuid())
+  planNutricionalId String
+  
+  // Información de la comida
+  tipo             TipoComida
+  nombre           String      // ej: "Desayuno día 1", "Almuerzo proteico"
+  descripcion      String?     // Instrucciones especiales
+  horaRecomendada  String?     // ej: "08:00", formato HH:mm
+  
+  // Información nutricional calculada
+  caloriasTotal      Float?    // Calculado automáticamente
+  proteinasTotal     Float?
+  carbohidratosTotal Float?
+  grasasTotal        Float?
+  
+  orden            Int         // Para ordenar las comidas del día
+  
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  
+  // Relaciones
+  planNutricional PlanNutricional @relation(fields: [planNutricionalId], references: [id], onDelete: Cascade)
+  alimentos       AlimentoComida[]
+  seguimientoComidas SeguimientoComida[]
+  
+  @@index([planNutricionalId, tipo, orden])
+}
+
+model Alimento {
+  id          String @id @default(cuid())
+  
+  // Información básica
+  nombre      String
+  marca       String?
+  categoria   String? // ej: "Lácteos", "Carnes", "Cereales"
+  
+  // Información nutricional por 100g
+  caloriasPor100g      Float
+  proteinasPor100g     Float
+  carbohidratosPor100g Float
+  grasasPor100g        Float
+  fibraPor100g         Float?
+  
+  // ✅ NUEVO: Etiquetas para filtrado inteligente
+  // Estas etiquetas nos permitirán filtrar según el perfil médico
+  alergenos     String? // "gluten,lactosa,nueces,mariscos" (separado por comas)
+  restricciones String? // "vegano,vegetariano,sin_gluten,sin_lactosa,kosher,halal"
+  caracteristicas String? // "bajo_sodio,alto_proteina,bajo_carbohidrato,sin_azucar"
+  
+  // Para enfermedades específicas
+  aptoParaDiabetes    Boolean @default(true)
+  aptoParaHipertension Boolean @default(true)
+  indiceGlicemico     Int?    // 0-100, útil para diabéticos
+  
+  // Metadatos
+  esGenerico  Boolean @default(true) // true para alimentos genéricos, false para marcas específicas
+  activo      Boolean @default(true)
+  
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  
+  // Relaciones
+  alimentosComida AlimentoComida[]
+  
+  @@index([nombre, categoria])
+  @@index([activo])
+  @@index([alergenos]) // ✅ Para filtrado rápido por alergias
+  @@index([restricciones]) // ✅ Para filtrado por restricciones
+}
+
+model AlimentoComida {
+  id            String @id @default(cuid())
+  comidaPlanId  String
+  alimentoId    String
+  
+  // Cantidad y unidad
+  cantidad      Float   // ej: 150, 2, 0.5
+  unidad        String  // ej: "gramos", "unidades", "tazas", "cucharadas"
+  
+  // Información nutricional calculada para esta cantidad específica
+  calorias      Float
+  proteinas     Float
+  carbohidratos Float
+  grasas        Float
+  
+  // Instrucciones específicas para este alimento en esta comida
+  preparacion   String? // ej: "hervido", "a la plancha", "crudo"
+  notas         String? // Notas adicionales
+  
+  creadoEn      DateTime @default(now())
+  
+  // Relaciones
+  comidaPlan    ComidaPlan @relation(fields: [comidaPlanId], references: [id], onDelete: Cascade)
+  alimento      Alimento   @relation(fields: [alimentoId], references: [id])
+  
+  @@index([comidaPlanId])
+  @@index([alimentoId])
+}
+
+enum EstadoSeguimiento {
+  NO_CONSUMIDO
+  CONSUMIDO_PARCIAL
+  CONSUMIDO_TOTAL
+  SUSTITUIDO
+}
+
+model SeguimientoPlan {
+  id               String    @id @default(cuid())
+  planNutricionalId String
+  
+  // Información del día
+  fecha            DateTime  // Solo la fecha, sin hora
+  
+  // Estado general del día
+  cumplimientoGeneral Float?  // Porcentaje de cumplimiento del día (0-100)
+  pesoDelDia       Float?    // Peso registrado ese día (opcional)
+  
+  // Observaciones del paciente o nutricionista
+  notasPaciente      String? // Lo que reporta el paciente
+  notasNutricionista String? // Observaciones del profesional
+  
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  
+  // Relaciones
+  planNutricional    PlanNutricional     @relation(fields: [planNutricionalId], references: [id], onDelete: Cascade)
+  seguimientoComidas SeguimientoComida[]
+  
+  @@unique([planNutricionalId, fecha]) // Un seguimiento por día por plan
+  @@index([planNutricionalId, fecha])
+}
+
+model SeguimientoComida {
+  id                  String             @id @default(cuid())
+  seguimientoPlanId   String
+  comidaPlanId        String
+  
+  // Estado de cumplimiento de esta comida específica
+  estado              EstadoSeguimiento  @default(NO_CONSUMIDO)
+  porcentajeConsumido Float              @default(0) // 0-100
+  
+  // Hora real de consumo
+  horaConsumo         DateTime?
+  
+  // Observaciones específicas de esta comida
+  notas               String?
+  
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  
+  // Relaciones
+  seguimientoPlan SeguimientoPlan @relation(fields: [seguimientoPlanId], references: [id], onDelete: Cascade)
+  comidaPlan      ComidaPlan      @relation(fields: [comidaPlanId], references: [id])
+  
+  @@unique([seguimientoPlanId, comidaPlanId]) // Una entrada por comida por día
+  @@index([seguimientoPlanId])
+}
+
+// ✅ Actualizamos las relaciones existentes
 model Usuario {
   id            String   @id @default(uuid())
   email         String   @unique
@@ -22,8 +249,9 @@ model Usuario {
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
 
-  pacientes Paciente[]
-  consultas Consulta[]
+  pacientes           Paciente[]
+  consultas           Consulta[]
+  planesNutricionales PlanNutricional[] // ✅ Nueva relación
 }
 
 model Paciente {
@@ -43,9 +271,10 @@ model Paciente {
   activo          Boolean   @default(true)
 
   // Relaciones
-  perfilMedico PerfilMedico?
-  mediciones   Medicion[]
-  consultas    Consulta[]
+  perfilMedico        PerfilMedico?
+  mediciones          Medicion[]
+  consultas           Consulta[]
+  planesNutricionales PlanNutricional[] // ✅ Nueva relación
 
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt

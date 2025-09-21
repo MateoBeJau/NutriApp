@@ -11,7 +11,8 @@ import {
   FileText,
   Stethoscope,
   Home,
-  User
+  User,
+  Utensils
 } from "lucide-react";
 
 const navigation = [
@@ -19,6 +20,7 @@ const navigation = [
   { name: "Pacientes", href: "/dashboard/pacientes", icon: Users },
   { name: "Consultas", href: "/dashboard/agenda", icon: Calendar },
   { name: "Planes", href: "/dashboard/planes", icon: FileText },
+  { name: "Alimentos", href: "/dashboard/alimentos", icon: Utensils },
   { name: "Reportes", href: "/dashboard/reportes", icon: BarChart3 },
   { name: "Perfil", href: "/dashboard/perfil", icon: User },
   { name: "Configuración", href: "/dashboard/configuracion", icon: Settings },
