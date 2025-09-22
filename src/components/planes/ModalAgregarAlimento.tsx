@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { obtenerAlimentosSegurosPacienteAction, agregarAlimentoComidaAction } from "@/app/dashboard/planes/actions";
 import { AlimentoSeguro } from "@/types/planes";
 
@@ -27,12 +27,24 @@ export default function ModalAgregarAlimento({ isOpen, onClose, comidaId, pacien
   const [unidad, setUnidad] = useState("g");
   const [preparacion, setPreparacion] = useState("");
 
-  // Cargar alimentos seguros cuando se abre el modal
-  useEffect(() => {
-    if (isOpen && pacienteId) {
-      cargarAlimentos();
+  const cargarAlimentos = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const res = await obtenerAlimentosSegurosPacienteAction(pacienteId);
+      if (res.success && Array.isArray(res.data)) {
+        setAlimentos(res.data);
+      } else {
+        setAlimentos([]);
+        setError(res.error || "Error al cargar alimentos");
+      }
+    } catch {
+      setError("Error al cargar alimentos");
     }
-  }, [isOpen, pacienteId]);
+    
+    setLoading(false);
+  }, [pacienteId]);
 
   // Filtrar alimentos según búsqueda
   useEffect(() => {
@@ -47,23 +59,11 @@ export default function ModalAgregarAlimento({ isOpen, onClose, comidaId, pacien
     }
   }, [busqueda, alimentos]);
 
-  async function cargarAlimentos() {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const res = await obtenerAlimentosSegurosPacienteAction(pacienteId);
-      if (res.success) {
-        setAlimentos(res.data);
-      } else {
-        setError(res.error || "Error al cargar alimentos");
-      }
-    } catch (err) {
-      setError("Error al cargar alimentos");
+  useEffect(() => {
+    if (isOpen && pacienteId) {
+      cargarAlimentos();
     }
-    
-    setLoading(false);
-  }
+  }, [isOpen, pacienteId, cargarAlimentos]);
 
   async function handleAgregar() {
     if (!alimentoSeleccionado) return;
@@ -87,7 +87,7 @@ export default function ModalAgregarAlimento({ isOpen, onClose, comidaId, pacien
       } else {
         setError(res.error || "Error al agregar alimento");
       }
-    } catch (err) {
+    } catch {
       setError("Error al agregar alimento");
     }
     
@@ -301,17 +301,17 @@ export default function ModalAgregarAlimento({ isOpen, onClose, comidaId, pacien
                               
                               {/* Indicadores de seguridad mejorados */}
                               <div className="flex flex-wrap gap-1 mt-3">
-                                {alimento.esSeguro && (
+                                {alimento.esSeguroParaPaciente && (
                                   <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
                                     ✅ Seguro
                                   </span>
                                 )}
-                                {alimento.esRecomendado && (
-                                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                                    ⭐ Recomendado
+                                {alimento.prioridad === 1 && (
+                                  <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                                    ⚠️ Alta prioridad
                                   </span>
                                 )}
-                                {alimento.advertencias && alimento.advertencias.length > 0 && (
+                                {alimento.razonRestriccion && (
                                   <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
                                     ⚠️ Precaución
                                   </span>
@@ -363,18 +363,15 @@ export default function ModalAgregarAlimento({ isOpen, onClose, comidaId, pacien
                       </div>
                       
                       {/* Advertencias si las hay */}
-                      {alimentoSeleccionado.advertencias && alimentoSeleccionado.advertencias.length > 0 && (
+                      {alimentoSeleccionado.razonRestriccion && (
                         <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3">
                           <div className="flex items-center mb-2">
                             <span className="text-yellow-600 mr-2">⚠️</span>
                             <span className="text-xs font-bold text-yellow-800">ADVERTENCIAS</span>
                           </div>
-                          {alimentoSeleccionado.advertencias.map((advertencia, idx) => (
-                            <div key={idx} className="text-xs text-yellow-800 flex items-start">
-                              <span className="mr-1">•</span>
-                              <span>{advertencia}</span>
-                            </div>
-                          ))}
+                          <div className="text-xs text-yellow-800">
+                            {alimentoSeleccionado.razonRestriccion}
+                          </div>
                         </div>
                       )}
                     </div>

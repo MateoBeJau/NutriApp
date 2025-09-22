@@ -6,6 +6,7 @@ import PerfilMedicoSection from "@/components/pacientes/PerfilMedicoSection";
 import MedicionesSection from "@/components/pacientes/MedicionesSection";
 import ConsultasSection from "@/components/pacientes/ConsultasSection";
 import { Calendar, Mail, Phone, Ruler, User, Edit, ArrowLeft, Calendar as CalendarIcon } from "lucide-react";
+import type { Paciente } from "@/types/pacients";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -15,17 +16,15 @@ export default async function PacientePage({ params }: Props) {
   const user = await requireAuth();
   const { id } = await params;
 
-  // Obtener el paciente y mediciones en paralelo
-  const [paciente, medicionesResult] = await Promise.all([
-    getPacienteAction(id, user.id),
-    getMedicionesAction(id, user.id)
-  ]);
-  
+  // Llamadas separadas y tipadas
+  const paciente = (await getPacienteAction(id, user.id)) as Paciente | null;
+  const medicionesResult = await getMedicionesAction(id, user.id);
+
   if (!paciente) {
     notFound();
   }
 
-  const calcularEdad = (fechaNacimiento: Date | null) => {
+  const calcularEdad = (fechaNacimiento: Date | null | undefined) => {
     if (!fechaNacimiento) return null;
     const hoy = new Date();
     const edad = hoy.getFullYear() - fechaNacimiento.getFullYear();

@@ -395,6 +395,54 @@ export async function crearAlimentoAction(formData: FormData) {
   }
 }
 
+export async function actualizarPlanNutricionalAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect('/auth/login');
+  }
+  try {
+    const planId = formData.get('planId') as string;
+    const nombre = formData.get('nombre') as string;
+    const descripcion = formData.get('descripcion') as string | undefined;
+    const tipo = formData.get('tipo') as any;
+    const fechaInicio = formData.get('fechaInicio') ? new Date(formData.get('fechaInicio') as string) : undefined;
+    const fechaFin = formData.get('fechaFin') ? new Date(formData.get('fechaFin') as string) : undefined;
+    const caloriasObjetivo = formData.get('caloriasObjetivo') ? parseInt(formData.get('caloriasObjetivo') as string) : undefined;
+    const proteinasObjetivo = formData.get('proteinasObjetivo') ? parseFloat(formData.get('proteinasObjetivo') as string) : undefined;
+    const carbohidratosObjetivo = formData.get('carbohidratosObjetivo') ? parseFloat(formData.get('carbohidratosObjetivo') as string) : undefined;
+    const grasasObjetivo = formData.get('grasasObjetivo') ? parseFloat(formData.get('grasasObjetivo') as string) : undefined;
+    const notas = formData.get('notas') as string | undefined;
+
+    // Actualizar plan
+    const updated = await import('@/lib/prisma').then(({ prisma }) =>
+      prisma.planNutricional.update({
+        where: { id: planId, usuarioId: user.id },
+        data: {
+          nombre,
+          descripcion,
+          tipo,
+          fechaInicio,
+          fechaFin,
+          caloriasObjetivo,
+          proteinasObjetivo,
+          carbohidratosObjetivo,
+          grasasObjetivo,
+          notas,
+        },
+      })
+    );
+    revalidatePath(`/dashboard/planes/${planId}`);
+    revalidatePath('/dashboard/planes');
+    return { success: true, data: updated };
+  } catch (error) {
+    console.error('Error al actualizar plan nutricional:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al actualizar el plan nutricional',
+    };
+  }
+}
+
 // ========== ACCIÓN PARA ELIMINAR PLAN ==========
 
 export async function eliminarPlanNutricionalAction(planId: string) {
