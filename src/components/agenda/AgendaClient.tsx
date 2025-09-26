@@ -7,6 +7,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import { FormularioConsulta } from '@/components/consultas/FormularioConsulta'
 import MedicionesConsulta from '@/components/consultas/MedicionesConsulta'
 import { obtenerConsultasDelDia, crearConsultaAction, actualizarConsultaAction, cambiarEstadoConsultaAction } from '@/app/dashboard/agenda/server-actions'
+import { eliminarConsultaAction } from '@/app/dashboard/pacientes/consultas-actions'
 import { buscarConsultaPorIdAction } from '@/app/dashboard/agenda/buscar-consulta-actions'
 import { useSearchParams } from 'next/navigation'
 
@@ -210,6 +211,26 @@ export function AgendaClient({ usuarioId }: AgendaClientProps) {
     }
   }
 
+  const handleEliminarConsulta = async (consultaId: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta consulta? Esta acción no se puede deshacer.')) {
+      return
+    }
+
+    try {
+      await eliminarConsultaAction(consultaId)
+      // Cerrar el modal si la consulta eliminada es la seleccionada
+      if (consultaSeleccionada?.id === consultaId) {
+        setConsultaSeleccionada(null)
+        setModoEdicion(false)
+      }
+      // Recargar consultas
+      await cargarConsultas(fechaSeleccionada)
+    } catch (error) {
+      console.error('Error al eliminar consulta:', error)
+      alert('Error al eliminar la consulta')
+    }
+  }
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -341,7 +362,7 @@ export function AgendaClient({ usuarioId }: AgendaClientProps) {
                       </div>
                     </div>
                     
-                    {/* Botón de acción */}
+                    {/* Botones de acción */}
                     <div className="flex items-center space-x-2 ml-4">
                       <Button
                         variant="outline"
@@ -357,6 +378,20 @@ export function AgendaClient({ usuarioId }: AgendaClientProps) {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                         Ver
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEliminarConsulta(consulta.id)
+                        }}
+                        className="hover:bg-red-50 hover:border-red-300 text-red-600 hover:text-red-700"
+                      >
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Eliminar
                       </Button>
                     </div>
                   </div>
@@ -621,6 +656,13 @@ export function AgendaClient({ usuarioId }: AgendaClientProps) {
                         }}
                       >
                         Cerrar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleEliminarConsulta(consultaSeleccionada.id)}
+                        className="text-red-600 hover:bg-red-50 hover:border-red-300"
+                      >
+                        🗑️ Eliminar Consulta
                       </Button>
                       <Button 
                         onClick={() => setModoEdicion(true)}

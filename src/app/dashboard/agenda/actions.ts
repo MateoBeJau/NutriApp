@@ -1,24 +1,30 @@
 'use server'
 
+import { prisma } from '@/lib/prisma'
 import { ConsultasService } from '@/services/consultas'
+import { enviarNotificacionConsulta } from '@/services/notificaciones'
 import { CrearConsulta, ActualizarConsulta, EstadoConsulta } from '@/types/consulta'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 export async function crearConsulta(usuarioId: string, formData: FormData) {
+  console.log('🚩 Entrando a crearConsulta');
   try {
-    const datos: CrearConsulta = {
+    const datos = {
       pacienteId: formData.get('pacienteId') as string,
       inicio: new Date(formData.get('inicio') as string),
       fin: new Date(formData.get('fin') as string),
-      lugar: formData.get('lugar') as string || undefined,
+      lugar: formData.get('lugar') as string || 'Consultorio principal',
       notas: formData.get('notas') as string || undefined,
     }
+    console.log('✅ Datos recibidos:', datos);
 
-    // Validar que los datos requeridos estén presentes
+    // Validar datos requeridos
     if (!datos.pacienteId || !datos.inicio || !datos.fin) {
+      console.log('❌ Faltan datos requeridos');
       throw new Error('Faltan datos requeridos')
     }
+    console.log('✅ Datos requeridos OK');
 
     // Verificar disponibilidad
     const disponible = await ConsultasService.verificarDisponibilidad(
@@ -26,12 +32,48 @@ export async function crearConsulta(usuarioId: string, formData: FormData) {
       datos.inicio,
       datos.fin
     )
+    console.log('✅ Disponibilidad:', disponible);
 
     if (!disponible) {
+      console.log('❌ El horario seleccionado no está disponible');
       throw new Error('El horario seleccionado no está disponible')
     }
+    console.log('✅ Horario disponible');
 
-    await ConsultasService.crearConsulta(usuarioId, datos)
+    // Crear la consulta incluyendo los datos del paciente y usuario
+    const consulta = await prisma.consulta.create({
+      data: {
+        ...datos,
+        usuarioId,
+      },
+      include: {
+        paciente: true,
+        usuario: true,
+      }
+    })
+    console.log('🟢 Consulta creada:', consulta);
+
+    // Preparar datos para la notificación
+    const notificacionData = {
+      paciente: {
+        nombre: consulta.paciente.nombre,
+        apellido: consulta.paciente.apellido,
+        email: consulta.paciente.email,
+      },
+      consulta: {
+        fecha: consulta.inicio,
+        hora: consulta.inicio.toLocaleTimeString(),
+        lugar: consulta.lugar || 'Consultorio principal',
+      },
+      nutricionista: {
+        nombre: consulta.usuario.nombre,
+      }
+    }
+
+    console.log('🟢 Llamando a enviarNotificacionConsulta', notificacionData);
+    // Enviar notificación
+    await enviarNotificacionConsulta(notificacionData)
+    console.log('✅ Notificación enviada (o intentada)');
     
     revalidatePath('/dashboard/agenda')
     return { success: true, message: 'Consulta creada exitosamente' }

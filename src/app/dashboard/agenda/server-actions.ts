@@ -2,6 +2,7 @@
 
 import { getCurrentUser } from '@/lib/auth'
 import { ConsultasService } from '@/services/consultas'
+import { enviarNotificacionConsulta } from '@/services/notificaciones'
 import { obtenerPacientesActivos } from '@/services/pacientes'
 import { redirect } from 'next/navigation'
 
@@ -42,6 +43,7 @@ export async function crearConsultaAction(datos: {
   lugar?: string
   notas?: string
 }) {
+  console.log('🚩 Entrando a crearConsultaAction');
   const user = await getCurrentUser()
   
   if (!user) {
@@ -49,6 +51,9 @@ export async function crearConsultaAction(datos: {
   }
 
   try {
+    console.log('✅ Datos recibidos:', datos);
+
+    // Crear la consulta
     const consulta = await ConsultasService.crearConsulta(user.id, {
       pacienteId: datos.pacienteId,
       inicio: new Date(datos.inicio),
@@ -56,6 +61,30 @@ export async function crearConsultaAction(datos: {
       lugar: datos.lugar,
       notas: datos.notas
     })
+    
+    console.log('🟢 Consulta creada:', consulta);
+
+    // Preparar datos para la notificación
+    const notificacionData = {
+      paciente: {
+        nombre: consulta.paciente.nombre,
+        apellido: consulta.paciente.apellido,
+        email: consulta.paciente.email,
+      },
+      consulta: {
+        fecha: consulta.inicio.toISOString(),
+        hora: consulta.inicio.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        lugar: consulta.lugar || 'Consultorio principal',
+      },
+      nutricionista: {
+        nombre: user.nombre,
+      }
+    }
+
+    console.log('🟢 Llamando a enviarNotificacionConsulta', notificacionData);
+    // Enviar notificación
+    await enviarNotificacionConsulta(notificacionData)
+    console.log('✅ Notificación enviada (o intentada)');
     
     return { success: true, consulta }
   } catch (error) {
