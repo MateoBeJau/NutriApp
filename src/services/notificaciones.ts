@@ -16,7 +16,7 @@ export async function enviarNotificacionConsulta(data: NotificacionConsultaData)
       }
     });
 
-    const webhookUrl = process.env.N8N_WEBHOOK_URL;
+    const webhookUrl = process.env.N8N_WEBHOOK_CONSULTA_URL;
     console.log('📍 URL del webhook:', webhookUrl);
 
     if (!webhookUrl) {
