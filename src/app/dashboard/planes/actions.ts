@@ -25,7 +25,8 @@ import {
   crearAlimento,
   obtenerTodosLosAlimentos
 } from "@/services/alimentos";
-import { TipoPlan, EstadoPlan, TipoComida } from "@prisma/client";
+import { TipoPlan, EstadoPlan, TipoComida } from "@/generated/prisma";
+
 
 // ========== ACCIONES DE PLANES ==========
 
@@ -464,6 +465,143 @@ export async function eliminarPlanNutricionalAction(planId: string) {
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Error al eliminar el plan nutricional" 
+    };
+  }
+}
+
+// ========== ACCIÓN PARA ACTUALIZAR ALIMENTO EN COMIDA ==========
+
+export async function actualizarAlimentoComidaAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect('/auth/login');
+  }
+
+  try {
+    const alimentoComidaId = formData.get('alimentoComidaId') as string;
+    const nuevoAlimentoId = formData.get('nuevoAlimentoId') as string;
+    const cantidad = Number(formData.get('cantidad'));
+    const unidad = formData.get('unidad') as string;
+    const preparacion = formData.get('preparacion') as string;
+    const planId = formData.get('planId') as string;
+
+    // Validaciones básicas
+    if (!alimentoComidaId || cantidad <= 0 || !unidad) {
+      return { success: false, error: "Faltan datos requeridos" };
+    }
+
+    // Importar prisma dinámicamente para evitar problemas de import
+    const { prisma } = await import('@/lib/prisma');
+
+    // Obtener el alimento actual para verificar permisos
+    const alimentoComidaActual = await prisma.alimentoComida.findUnique({
+      where: { id: alimentoComidaId },
+      include: {
+        comidaPlan: {
+          include: {
+            planNutricional: true
+          }
+        }
+      }
+    });
+
+    if (!alimentoComidaActual) {
+      return { success: false, error: "Alimento no encontrado" };
+    }
+
+    // Verificar que el plan pertenece al usuario
+    if (alimentoComidaActual.comidaPlan.planNutricional.usuarioId !== user.id) {
+      return { success: false, error: "No tienes permisos para editar este plan" };
+    }
+
+    let alimentoId = alimentoComidaActual.alimentoId;
+    let alimento = await prisma.alimento.findUnique({
+      where: { id: alimentoId }
+    });
+
+    // Si se quiere cambiar el alimento
+    if (nuevoAlimentoId && nuevoAlimentoId !== alimentoId) {
+      const nuevoAlimento = await prisma.alimento.findUnique({
+        where: { id: nuevoAlimentoId }
+      });
+      
+      if (!nuevoAlimento) {
+        return { success: false, error: "Nuevo alimento no encontrado" };
+      }
+      
+      alimentoId = nuevoAlimentoId;
+      alimento = nuevoAlimento;
+    }
+
+    if (!alimento) {
+      return { success: false, error: "Alimento no encontrado" };
+    }
+
+    // Calcular nuevos valores nutricionales
+    const factor = cantidad / 100;
+    const nuevosValores = {
+      calorias: alimento.caloriasPor100g * factor,
+      proteinas: alimento.proteinasPor100g * factor,
+      carbohidratos: alimento.carbohidratosPor100g * factor,
+      grasas: alimento.grasasPor100g * factor
+    };
+
+    // Actualizar el alimento en la comida
+    const alimentoComidaActualizado = await prisma.alimentoComida.update({
+      where: { id: alimentoComidaId },
+      data: {
+        alimentoId,
+        cantidad,
+        unidad,
+        preparacion: preparacion || null,
+        calorias: nuevosValores.calorias,
+        proteinas: nuevosValores.proteinas,
+        carbohidratos: nuevosValores.carbohidratos,
+        grasas: nuevosValores.grasas
+      },
+      include: {
+        alimento: true
+      }
+    });
+
+    // Recalcular totales de la comida
+    const alimentos = await prisma.alimentoComida.findMany({
+      where: { comidaPlanId: alimentoComidaActualizado.comidaPlanId }
+    });
+
+    const totales = alimentos.reduce(
+      (acc, alimento) => ({
+        calorias: acc.calorias + Number(alimento.calorias || 0),
+        proteinas: acc.proteinas + Number(alimento.proteinas || 0),
+        carbohidratos: acc.carbohidratos + Number(alimento.carbohidratos || 0),
+        grasas: acc.grasas + Number(alimento.grasas || 0)
+      }),
+      { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 }
+    );
+
+    await prisma.comidaPlan.update({
+      where: { id: alimentoComidaActualizado.comidaPlanId },
+      data: {
+        caloriasTotal: Math.round(totales.calorias),
+        proteinasTotal: Math.round(totales.proteinas * 10) / 10,
+        carbohidratosTotal: Math.round(totales.carbohidratos * 10) / 10,
+        grasasTotal: Math.round(totales.grasas * 10) / 10
+      }
+    });
+
+    revalidatePath(`/dashboard/planes/${planId}`);
+
+    return { 
+      success: true, 
+      data: alimentoComidaActualizado,
+      message: "Alimento actualizado exitosamente" 
+    };
+
+  } catch (error) {
+    console.error("Error actualizando alimento:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Error interno del servidor" 
     };
   }
 }

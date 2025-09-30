@@ -5,6 +5,7 @@ import { requireAuth } from "@/lib/auth";
 import PerfilMedicoSection from "@/components/pacientes/PerfilMedicoSection";
 import MedicionesSection from "@/components/pacientes/MedicionesSection";
 import ConsultasSection from "@/components/pacientes/ConsultasSection";
+import PlanesSection from "@/components/pacientes/PlanesSection";
 import { Calendar, Mail, Phone, Ruler, User, Edit, ArrowLeft, Calendar as CalendarIcon } from "lucide-react";
 import type { Paciente } from "@/types/pacients";
 
@@ -133,6 +134,12 @@ export default async function PacientePage({ params }: Props) {
             className="px-4 py-3 text-sm font-medium text-gray-600 hover:text-blue-600 hover:border-b-2 hover:border-blue-600 transition-colors"
           >
             Mediciones
+          </a>
+          <a
+            href="#planes"
+            className="px-4 py-3 text-sm font-medium text-gray-600 hover:text-blue-600 hover:border-b-2 hover:border-blue-600 transition-colors"
+          >
+            Planes Nutricionales
           </a>
           <a
             href="#consultas"
@@ -266,6 +273,11 @@ export default async function PacientePage({ params }: Props) {
       {/* Sección: Mediciones - Pasar datos desde el servidor */}
       <section id="mediciones" className="mb-8">
         <MedicionesSection pacienteId={id} initialMediciones={mediciones} />
+      </section>
+
+      {/* Sección: Planes Nutricionales */}
+      <section id="planes" className="mb-8">
+        <PlanesSection pacienteId={id} />
       </section>
 
       {/* Sección: Consultas */}

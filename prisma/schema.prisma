@@ -162,10 +162,10 @@ model AlimentoComida {
   unidad        String  // ej: "gramos", "unidades", "tazas", "cucharadas"
   
   // Información nutricional calculada para esta cantidad específica
-  calorias      Float
-  proteinas     Float
-  carbohidratos Float
-  grasas        Float
+  calorias      Float?
+  proteinas     Float?
+  carbohidratos Float?
+  grasas        Float?
   
   // Instrucciones específicas para este alimento en esta comida
   preparacion   String? // ej: "hervido", "a la plancha", "crudo"
@@ -334,6 +334,11 @@ enum EstadoConsulta {
   REAGENDADO // ✅ Nuevo estado
 }
 
+enum EstadoPago {
+  PAGADO
+  PENDIENTE
+}
+
 model Consulta {
   id            String         @id @default(uuid())
   usuarioId     String
@@ -341,6 +346,7 @@ model Consulta {
   inicio        DateTime
   fin           DateTime
   estado        EstadoConsulta @default(PROGRAMADO)
+  estadoPago    EstadoPago     @default(PENDIENTE) // ✅ NUEVO: Estado de pago
   lugar         String?
   notas         String?
   creadoEn      DateTime       @default(now())

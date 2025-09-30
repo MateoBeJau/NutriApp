@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ConsultaConPaciente, EstadoConsulta } from '@/types/consulta'
+import { ConsultaConPaciente, EstadoConsulta, EstadoPago } from '@/types/consulta'
 import Button from '@/components/ui/Button'
-import { obtenerConsultasDePacienteAction } from '@/app/dashboard/pacientes/consultas-actions'
+import { obtenerConsultasDePacienteAction, cambiarEstadoPagoAction } from '@/app/dashboard/pacientes/consultas-actions'
 import { useRouter } from 'next/navigation'
 
 interface ConsultasSectionProps {
@@ -16,6 +16,7 @@ export default function ConsultasSection({ pacienteId, pacienteNombre, pacienteA
   const [consultas, setConsultas] = useState<ConsultaConPaciente[]>([])
   const [cargando, setCargando] = useState(true)
   const [mostrarTodas, setMostrarTodas] = useState(false)
+  const [cambiandoEstado, setCambiandoEstado] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -89,12 +90,50 @@ export default function ConsultasSection({ pacienteId, pacienteNombre, pacienteA
     router.push(`/dashboard/agenda?fecha=${fechaParam}&consulta=${consulta.id}`)
   }
 
+  const handleCambiarEstadoPago = async (consultaId: string, nuevoEstado: EstadoPago) => {
+    try {
+      setCambiandoEstado(consultaId)
+      
+      const resultado = await cambiarEstadoPagoAction(consultaId, nuevoEstado)
+      
+      if (resultado.success) {
+        // Recargar las consultas para mostrar el cambio
+        await cargarConsultas()
+      } else {
+        alert('Error al cambiar el estado de pago: ' + resultado.message)
+      }
+    } catch (error) {
+      console.error('Error al cambiar estado de pago:', error)
+      alert('Error al cambiar el estado de pago')
+    } finally {
+      setCambiandoEstado(null)
+    }
+  }
+
+  const obtenerColorEstadoPago = (estado: EstadoPago) => {
+    const colores = {
+      PAGADO: 'bg-green-100 text-green-800 border-green-200',
+      PENDIENTE: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    }
+    return colores[estado] || 'bg-gray-100 text-gray-800 border-gray-200'
+  }
+
+  const obtenerIconoEstadoPago = (estado: EstadoPago) => {
+    const iconos = {
+      PAGADO: '💚',
+      PENDIENTE: '💛',
+    }
+    return iconos[estado] || '❓'
+  }
+
   const consultasAMostrar = mostrarTodas ? consultas : consultas.slice(0, 5)
   const estadisticas = {
     total: consultas.length,
     completadas: consultas.filter(c => c.estado === 'COMPLETADO').length,
     programadas: consultas.filter(c => c.estado === 'PROGRAMADO' || c.estado === 'CONFIRMADO').length,
     canceladas: consultas.filter(c => c.estado === 'CANCELADO').length,
+    pagadas: consultas.filter(c => c.estadoPago === 'PAGADO').length,
+    pendientes: consultas.filter(c => c.estadoPago === 'PENDIENTE').length,
   }
 
   if (cargando) {
@@ -136,12 +175,16 @@ export default function ConsultasSection({ pacienteId, pacienteNombre, pacienteA
                 <div className="text-gray-500">Total</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-lg text-purple-600">{estadisticas.completadas}</div>
-                <div className="text-gray-500">Completadas</div>
+                <div className="font-semibold text-lg text-green-600">{estadisticas.pagadas}</div>
+                <div className="text-gray-500">Pagadas</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-lg text-blue-600">{estadisticas.programadas}</div>
-                <div className="text-gray-500">Programadas</div>
+                <div className="font-semibold text-lg text-yellow-600">{estadisticas.pendientes}</div>
+                <div className="text-gray-500">Pendientes</div>
+              </div>
+              <div className="text-center">
+                <div className="font-semibold text-lg text-purple-600">{estadisticas.completadas}</div>
+                <div className="text-gray-500">Completadas</div>
               </div>
             </div>
           )}
@@ -187,10 +230,13 @@ export default function ConsultasSection({ pacienteId, pacienteNombre, pacienteA
                         </div>
                       </div>
 
-                      {/* Estado */}
-                      <div className="flex items-center space-x-3">
+                      {/* Estados */}
+                      <div className="flex items-center space-x-2">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium border ${obtenerColorEstado(consulta.estado)}`}>
                           {obtenerIconoEstado(consulta.estado)} {consulta.estado}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${obtenerColorEstadoPago(consulta.estadoPago)}`}>
+                          {obtenerIconoEstadoPago(consulta.estadoPago)} {consulta.estadoPago}
                         </span>
                       </div>
 
@@ -214,8 +260,45 @@ export default function ConsultasSection({ pacienteId, pacienteNombre, pacienteA
                       </div>
                     </div>
 
-                    {/* Mediciones asociadas e indicador clickeable */}
+                    {/* Acciones y mediciones */}
                     <div className="flex items-center space-x-3">
+                      {/* Botones de estado de pago */}
+                      <div className="flex items-center space-x-1">
+                        {consulta.estadoPago === 'PENDIENTE' ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCambiarEstadoPago(consulta.id, 'PAGADO')
+                            }}
+                            disabled={cambiandoEstado === consulta.id}
+                            className="px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-700 rounded-md border border-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            title="Marcar como pagado"
+                          >
+                            {cambiandoEstado === consulta.id ? (
+                              <div className="inline-block animate-spin rounded-full h-3 w-3 border-b border-green-600"></div>
+                            ) : (
+                              '💚 Pagar'
+                            )}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCambiarEstadoPago(consulta.id, 'PENDIENTE')
+                            }}
+                            disabled={cambiandoEstado === consulta.id}
+                            className="px-2 py-1 text-xs bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-md border border-yellow-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            title="Marcar como pendiente"
+                          >
+                            {cambiandoEstado === consulta.id ? (
+                              <div className="inline-block animate-spin rounded-full h-3 w-3 border-b border-yellow-600"></div>
+                            ) : (
+                              '💛 Pendiente'
+                            )}
+                          </button>
+                        )}
+                      </div>
+
                       {consulta.mediciones && consulta.mediciones.length > 0 && (
                         <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
                           📊 {consulta.mediciones.length} medición{consulta.mediciones.length !== 1 ? 'es' : ''}
