@@ -123,6 +123,7 @@ export class ConsultasService {
         inicio: datos.inicio,
         fin: datos.fin,
         estado: datos.estado,
+        estadoPago: datos.estadoPago,
         lugar: datos.lugar,
         notas: datos.notas,
       },

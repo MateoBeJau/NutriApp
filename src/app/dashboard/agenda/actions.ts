@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { ConsultasService } from '@/services/consultas'
 import { enviarNotificacionConsulta } from '@/services/notificaciones'
-import { CrearConsulta, ActualizarConsulta, EstadoConsulta } from '@/types/consulta'
+import { CrearConsulta, ActualizarConsulta, EstadoConsulta, EstadoPago } from '@/types/consulta'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -96,6 +96,7 @@ export async function actualizarConsulta(
       inicio: formData.get('inicio') ? new Date(formData.get('inicio') as string) : undefined,
       fin: formData.get('fin') ? new Date(formData.get('fin') as string) : undefined,
       estado: formData.get('estado') as EstadoConsulta || undefined,
+      estadoPago: formData.get('estadoPago') as EstadoPago || undefined,
       lugar: formData.get('lugar') as string || undefined,
       notas: formData.get('notas') as string || undefined,
     }
@@ -157,6 +158,26 @@ export async function cambiarEstadoConsulta(
     return { 
       success: false, 
       message: error instanceof Error ? error.message : 'Error al cambiar el estado' 
+    }
+  }
+}
+
+export async function cambiarEstadoPago(
+  consultaId: string, 
+  usuarioId: string, 
+  nuevoEstadoPago: EstadoPago
+) {
+  try {
+    await ConsultasService.actualizarConsulta(consultaId, usuarioId, { estadoPago: nuevoEstadoPago })
+    
+    revalidatePath('/dashboard/agenda')
+    revalidatePath('/dashboard/pacientes')
+    return { success: true, message: 'Estado de pago actualizado' }
+  } catch (error) {
+    console.error('Error al cambiar estado de pago:', error)
+    return { 
+      success: false, 
+      message: error instanceof Error ? error.message : 'Error al cambiar el estado de pago' 
     }
   }
 }

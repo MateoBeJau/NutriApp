@@ -7,6 +7,11 @@ export enum EstadoConsulta {
   REAGENDADO = 'REAGENDADO'
 }
 
+export enum EstadoPago {
+  PAGADO = 'PAGADO',
+  PENDIENTE = 'PENDIENTE'
+}
+
 export interface Consulta {
   id: string
   usuarioId: string
@@ -14,6 +19,7 @@ export interface Consulta {
   inicio: Date
   fin: Date
   estado: EstadoConsulta
+  estadoPago: EstadoPago
   lugar?: string
   notas?: string
   creadoEn: Date
@@ -49,6 +55,7 @@ export interface ActualizarConsulta {
   inicio?: Date
   fin?: Date
   estado?: EstadoConsulta
+  estadoPago?: EstadoPago
   lugar?: string
   notas?: string
 }

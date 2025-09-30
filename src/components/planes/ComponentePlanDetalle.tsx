@@ -592,6 +592,8 @@ export default function ComponentePlanDetalle({ plan }: Props) {
           isOpen={modalEditarOpen}
           onClose={handleCerrarModalEditar}
           alimentoComida={alimentoParaEditar}
+          pacienteId={plan.pacienteId}
+          planId={plan.id}
           onSuccess={handleAlimentoEditado}
         />
       )}
