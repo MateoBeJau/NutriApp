@@ -25,7 +25,7 @@ import {
   crearAlimento,
   obtenerTodosLosAlimentos
 } from "@/services/alimentos";
-import { TipoPlan, EstadoPlan, TipoComida } from "@/generated/prisma";
+import { TipoPlan, EstadoPlan, TipoComida } from "@prisma/client";
 
 
 // ========== ACCIONES DE PLANES ==========
@@ -43,7 +43,7 @@ export async function crearPlanNutricionalAction(formData: FormData) {
       nombre: formData.get('nombre') as string,
       descripcion: formData.get('descripcion') as string || undefined,
       tipo: (formData.get('tipo') as TipoPlan) || TipoPlan.MANUAL,
-      fechaInicio: new Date(formData.get('fechaInicio') as string),
+      fechaInicio: new Date(formData.get('fechaInicio') as string || new Date()),
       fechaFin: formData.get('fechaFin') ? new Date(formData.get('fechaFin') as string) : undefined,
       caloriasObjetivo: formData.get('caloriasObjetivo') ? parseInt(formData.get('caloriasObjetivo') as string) : undefined,
       proteinasObjetivo: formData.get('proteinasObjetivo') ? parseFloat(formData.get('proteinasObjetivo') as string) : undefined,
@@ -168,11 +168,11 @@ export async function crearComidaPlanAction(formData: FormData) {
   try {
     const data: CrearComidaPlan = {
       planNutricionalId: formData.get('planNutricionalId') as string,
-      tipo: formData.get('tipo') as TipoComida,
+      tipo: (formData.get('tipo') as TipoComida) || TipoComida.DESAYUNO,
       nombre: formData.get('nombre') as string,
       descripcion: formData.get('descripcion') as string || undefined,
       horaRecomendada: formData.get('horaRecomendada') as string || undefined,
-      orden: parseInt(formData.get('orden') as string)
+      orden: parseInt(formData.get('orden') as string || '0')
     };
 
     const comida = await crearComidaPlan(data);
@@ -204,7 +204,7 @@ export async function agregarAlimentoComidaAction(formData: FormData) {
     const data: AgregarAlimentoComida = {
       comidaPlanId: formData.get('comidaPlanId') as string,
       alimentoId: formData.get('alimentoId') as string,
-      cantidad: parseFloat(formData.get('cantidad') as string),
+      cantidad: parseFloat(formData.get('cantidad') as string || '0'),
       unidad: formData.get('unidad') as string,
       preparacion: formData.get('preparacion') as string || undefined,
       notas: formData.get('notas') as string || undefined
@@ -405,7 +405,7 @@ export async function actualizarPlanNutricionalAction(formData: FormData) {
     const planId = formData.get('planId') as string;
     const nombre = formData.get('nombre') as string;
     const descripcion = formData.get('descripcion') as string | undefined;
-    const tipo = formData.get('tipo') as any;
+    const tipo = (formData.get('tipo') as TipoPlan) || TipoPlan.MANUAL;
     const fechaInicio = formData.get('fechaInicio') ? new Date(formData.get('fechaInicio') as string) : undefined;
     const fechaFin = formData.get('fechaFin') ? new Date(formData.get('fechaFin') as string) : undefined;
     const caloriasObjetivo = formData.get('caloriasObjetivo') ? parseInt(formData.get('caloriasObjetivo') as string) : undefined;
@@ -480,7 +480,7 @@ export async function actualizarAlimentoComidaAction(formData: FormData) {
   try {
     const alimentoComidaId = formData.get('alimentoComidaId') as string;
     const nuevoAlimentoId = formData.get('nuevoAlimentoId') as string;
-    const cantidad = Number(formData.get('cantidad'));
+    const cantidad = Number(formData.get('cantidad') || 0);
     const unidad = formData.get('unidad') as string;
     const preparacion = formData.get('preparacion') as string;
     const planId = formData.get('planId') as string;

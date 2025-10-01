@@ -3,17 +3,17 @@
 import { prisma } from '@/lib/prisma'
 import { ConsultasService } from '@/services/consultas'
 import { enviarNotificacionConsulta } from '@/services/notificaciones'
-import { CrearConsulta, ActualizarConsulta, EstadoConsulta, EstadoPago } from '@/types/consulta'
+import {  ActualizarConsulta, EstadoConsulta, EstadoPago } from '@/types/consulta'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
+import {  } from 'next/navigation'
 
 export async function crearConsulta(usuarioId: string, formData: FormData) {
   console.log('🚩 Entrando a crearConsulta');
   try {
     const datos = {
       pacienteId: formData.get('pacienteId') as string,
-      inicio: new Date(formData.get('inicio') as string),
-      fin: new Date(formData.get('fin') as string),
+      inicio: new Date(formData.get('inicio') as string || new Date()),
+      fin: new Date(formData.get('fin') as string || new Date()),
       lugar: formData.get('lugar') as string || 'Consultorio principal',
       notas: formData.get('notas') as string || undefined,
     }
@@ -56,9 +56,9 @@ export async function crearConsulta(usuarioId: string, formData: FormData) {
     // Preparar datos para la notificación
     const notificacionData = {
       paciente: {
-        nombre: consulta.paciente.nombre,
-        apellido: consulta.paciente.apellido,
-        email: consulta.paciente.email,
+        nombre: consulta.paciente!.nombre,
+        apellido: consulta.paciente!.apellido,
+        email: consulta.paciente!.email || null,
       },
       consulta: {
         fecha: consulta.inicio,

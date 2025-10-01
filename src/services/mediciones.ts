@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
+import { Medicion } from '@prisma/client';
 
 export interface CreateMedicionInput {
   pacienteId: string;
+  consultaId?: string;
   fecha: Date;
   pesoKg?: number;
   alturaCm?: number;
@@ -17,27 +19,21 @@ export interface UpdateMedicionInput {
   notas?: string;
 }
 
-export async function createMedicion(data: CreateMedicionInput) {
-  return await prisma.medicion.create({
-    data,
-    include: {
-      paciente: true
-    }
+export async function createMedicion(input: CreateMedicionInput): Promise<Medicion> {
+  return prisma.medicion.create({
+    data: input
   });
 }
 
-export async function updateMedicion(id: string, data: UpdateMedicionInput) {
-  return await prisma.medicion.update({
+export async function updateMedicion(id: string, input: UpdateMedicionInput): Promise<Medicion> {
+  return prisma.medicion.update({
     where: { id },
-    data,
-    include: {
-      paciente: true
-    }
+    data: input
   });
 }
 
-export async function deleteMedicion(id: string) {
-  return await prisma.medicion.delete({
+export async function deleteMedicion(id: string): Promise<void> {
+  await prisma.medicion.delete({
     where: { id }
   });
 }
@@ -51,25 +47,11 @@ export async function getMedicionById(id: string) {
   });
 }
 
-export async function getMedicionesByPaciente(pacienteId: string, limit: number = 50) {
-  console.log("🔍 getMedicionesByPaciente called with:", { pacienteId, limit });
-  
-  try {
-    const result = await prisma.medicion.findMany({
-      where: { pacienteId },
-      orderBy: { fecha: 'desc' },
-      take: limit,
-      include: {
-        paciente: true
-      }
-    });
-    
-    console.log("🔍 Prisma result:", result);
-    return result;
-  } catch (error) {
-    console.error("❌ Error in getMedicionesByPaciente:", error);
-    throw error;
-  }
+export async function getMedicionesByPaciente(pacienteId: string): Promise<Medicion[]> {
+  return prisma.medicion.findMany({
+    where: { pacienteId },
+    orderBy: { fecha: 'desc' }
+  });
 }
 
 export async function getUltimaMedicion(pacienteId: string) {

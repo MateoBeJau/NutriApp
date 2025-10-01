@@ -3,12 +3,12 @@ export interface Paciente {
   usuarioId: string
   nombre: string
   apellido: string
-  email?: string
-  telefono?: string
-  fechaNacimiento?: Date
-  sexo?: string
-  alturaCm?: number
-  notas?: string
+  email?: string | null
+  telefono?: string | null
+  fechaNacimiento?: Date | null
+  sexo?: string | null
+  alturaCm?: number | null
+  notas?: string | null
   activo: boolean
   creadoEn: Date
   actualizadoEn: Date

@@ -1,15 +1,7 @@
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-interface Medicion {
-  id: string;
-  fecha: Date;
-  pesoKg?: number;
-  alturaCm?: number;
-  imc?: number;
-  notas?: string;
-}
+import { Medicion } from '@prisma/client';
 
 interface Props {
   mediciones: Medicion[];
@@ -18,7 +10,7 @@ interface Props {
 export default function GraficaPeso({ mediciones }: Props) {
   // Filtrar solo mediciones con peso y preparar datos para la gráfica
   const datosGrafica = mediciones
-    .filter(m => m.pesoKg)
+    .filter(m => m.pesoKg != null) // Usar != null para filtrar tanto null como undefined
     .map(medicion => ({
       fecha: medicion.fecha.toLocaleDateString('es-AR', { 
         day: '2-digit', 

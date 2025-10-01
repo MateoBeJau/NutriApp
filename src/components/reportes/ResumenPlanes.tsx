@@ -1,20 +1,9 @@
 "use client";
 
 import Link from 'next/link';
+import { PlanNutricional } from '@prisma/client';
 
-interface Plan {
-  id: string;
-  nombre: string;
-  descripcion?: string;
-  tipo: string;
-  estado: string;
-  fechaInicio: Date;
-  fechaFin?: Date;
-  caloriasObjetivo?: number;
-  proteinasObjetivo?: number;
-  carbohidratosObjetivo?: number;
-  grasasObjetivo?: number;
-  notas?: string;
+interface Plan extends PlanNutricional {
   _count: {
     comidas: number;
     seguimientos: number;

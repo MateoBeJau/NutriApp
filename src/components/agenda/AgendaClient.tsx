@@ -330,7 +330,7 @@ export function AgendaClient({ usuarioId }: AgendaClientProps) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-1">
                           <h3 className="text-lg font-semibold text-gray-900 truncate">
-                            👤 {consulta.paciente.nombre} {consulta.paciente.apellido}
+                            �� {consulta.paciente!.nombre} {consulta.paciente!.apellido}
                           </h3>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${obtenerColorEstado(consulta.estado)}`}>
                             {consulta.estado === 'PROGRAMADO' && '📅'}

@@ -53,11 +53,10 @@ export async function listPacientes(opts: {
   return { items, nextCursor };
 }
 
-// ✅ OPTIMIZACIÓN: Consulta más eficiente para getPacienteById con timeout y medición
+// ✅ OPTIMIZACIÓN: Consulta más eficiente para getPacienteById con medición
 export async function getPacienteById(id: string, usuarioId: string) {
   return measurePerformance(async () => {
-    // ✅ Usar findUnique es más eficiente que findFirst para búsquedas por ID
-    const queryPromise = prisma.paciente.findUnique({
+    const result = await prisma.paciente.findUnique({
       where: { id },
       select: {
         id: true,
@@ -75,16 +74,9 @@ export async function getPacienteById(id: string, usuarioId: string) {
         activo: true,
       },
     });
-
-    // ✅ Timeout de 5 segundos para evitar queries que cuelguen
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Database query timeout after 5 seconds')), 5000)
-    );
-
-    const result = await Promise.race([queryPromise, timeoutPromise]);
     
     // ✅ Verificar que el paciente pertenece al usuario y está activo
-    if (!result || (result as any).usuarioId !== usuarioId || !(result as any).activo) {
+    if (!result || result.usuarioId !== usuarioId || !result.activo) {
       console.log(`⚠️ No valid patient found with id: ${id} for user: ${usuarioId}`);
       return null;
     }

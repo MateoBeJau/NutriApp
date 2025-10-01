@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { ConsultasService } from '@/services/consultas'
 import { enviarNotificacionConsulta } from '@/services/notificaciones'
 import { obtenerPacientesActivos } from '@/services/pacientes'
+import { EstadoConsulta } from '@/types/consulta'
 import { redirect } from 'next/navigation'
 
 export async function obtenerConsultasDelDia(fecha: Date) {
@@ -67,12 +68,12 @@ export async function crearConsultaAction(datos: {
     // Preparar datos para la notificación
     const notificacionData = {
       paciente: {
-        nombre: consulta.paciente.nombre,
-        apellido: consulta.paciente.apellido,
-        email: consulta.paciente.email,
+        nombre: consulta.paciente!.nombre,
+        apellido: consulta.paciente!.apellido,
+        email: consulta.paciente!.email || null,
       },
       consulta: {
-        fecha: consulta.inicio.toISOString(),
+        fecha: consulta.inicio,
         hora: consulta.inicio.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
         lugar: consulta.lugar || 'Consultorio principal',
       },
@@ -121,7 +122,7 @@ export async function actualizarConsultaAction(consultaId: string, datos: {
   }
 }
 
-export async function cambiarEstadoConsultaAction(consultaId: string, nuevoEstado: string) {
+export async function cambiarEstadoConsultaAction(consultaId: string, nuevoEstado: EstadoConsulta) {
   const user = await getCurrentUser()
   
   if (!user) {
@@ -130,7 +131,7 @@ export async function cambiarEstadoConsultaAction(consultaId: string, nuevoEstad
 
   try {
     const consulta = await ConsultasService.actualizarConsulta(consultaId, user.id, {
-      estado: nuevoEstado as any
+      estado: nuevoEstado
     })
     
     return { success: true, consulta }

@@ -33,7 +33,22 @@ export default async function PlanDetallePage({ params }: Props) {
     );
   }
 
-  const plan = planRes.data;
+  const planData = planRes.data;
+  
+  if (!planData) {
+    return (
+      <div className="max-w-7xl mx-auto py-8">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="text-red-800">
+            Error: Plan nutricional no encontrado
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Transformar null a valores por defecto solo donde sea necesario
+  const plan = planData; // Sin transformaciones
 
   return (
     <div className="max-w-7xl mx-auto py-8">
@@ -155,7 +170,7 @@ export default async function PlanDetallePage({ params }: Props) {
             <div>
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Cal. Objetivo</div>
               <div className="text-sm font-semibold text-gray-900">
-                {plan.caloriasObjetivo ? `${plan.caloriasObjetivo}` : 'No definido'}
+                {plan.caloriasObjetivo ?? 'No definido'}
               </div>
             </div>
           </div>

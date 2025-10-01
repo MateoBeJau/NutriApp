@@ -39,20 +39,31 @@ export default async function EditPacientePage({ params }: Props) {
   console.log(`🔍 Params took: ${paramsTime - authTime}ms`);
 
   // ✅ OPTIMIZACIÓN: Usar cache y manejar errores
-  let paciente;
-  try {
-    paciente = await getCachedPaciente(id, user.id);
-    const pacienteTime = Date.now();
-    console.log(`🔍 Paciente query took: ${pacienteTime - paramsTime}ms`);
-    console.log(` Total page load: ${pacienteTime - startTime}ms`);
-  } catch (error) {
-    console.error("Error loading paciente:", error);
-    notFound();
-  }
+  const pacienteResult = await getCachedPaciente(id, user.id);
+  const pacienteTime = Date.now();
+  console.log(`🔍 Paciente query took: ${pacienteTime - paramsTime}ms`);
+  console.log(` Total page load: ${pacienteTime - startTime}ms`);
   
-  if (!paciente) {
+  if (!pacienteResult) {
     notFound();
   }
+
+  // Aserción de tipo específica para resolver el problema de TypeScript
+  const paciente = pacienteResult as {
+    id: string;
+    nombre: string;
+    apellido: string;
+    email?: string | null;
+    telefono?: string | null;
+    fechaNacimiento?: Date | string | null;
+    sexo?: string | null;
+    alturaCm?: number | null;
+    notas?: string | null;
+    usuarioId?: string;
+    creadoEn?: Date | string;
+    actualizadoEn?: Date | string;
+    activo?: boolean;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">

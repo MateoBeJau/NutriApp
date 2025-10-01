@@ -1,100 +1,55 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { Medicion, Consulta, PlanNutricional } from "@prisma/client";
 
 export interface DatosReportePaciente {
-  // Información básica del paciente
   paciente: {
     id: string;
     nombre: string;
     apellido: string;
-    email?: string;
-    telefono?: string;
-    fechaNacimiento?: Date;
-    sexo?: string;
-    alturaCm?: number;
-    notas?: string;
+    email?: string | null;
+    telefono?: string | null;
+    fechaNacimiento?: Date | null;
+    sexo?: string | null;
+    alturaCm?: number | null;
+    notas?: string | null;
     creadoEn: Date;
   };
-
-  // Perfil médico (incluido pero no usado en UI actual)
+  
+  // Perfil médico en el nivel superior (como espera el código)
   perfilMedico?: {
-    gustos?: string;
-    disgustos?: string;
-    alergias?: string;
-    enfermedades?: string;
-    medicamentos?: string;
-    restricciones?: string;
-    objetivos?: string;
-    observaciones?: string;
-  };
-
-  // Mediciones históricas
-  mediciones: Array<{
-    id: string;
-    fecha: Date;
-    pesoKg?: number;
-    alturaCm?: number;
-    imc?: number;
-    notas?: string;
-    consultaId?: string;
-  }>;
-
-  // Consultas
-  consultas: Array<{
-    id: string;
-    inicio: Date;
-    fin: Date;
-    estado: string;
-    lugar?: string;
-    notas?: string;
-    mediciones: Array<{
-      id: string;
-      fecha: Date;
-      pesoKg?: number;
-      alturaCm?: number;
-      imc?: number;
-      notas?: string;
-    }>;
-  }>;
-
-  // Planes nutricionales
-  planes: Array<{
-    id: string;
-    nombre: string;
-    descripcion?: string;
-    tipo: string;
-    estado: string;
-    fechaInicio: Date;
-    fechaFin?: Date;
-    caloriasObjetivo?: number;
-    proteinasObjetivo?: number;
-    carbohidratosObjetivo?: number;
-    grasasObjetivo?: number;
-    notas?: string;
-    _count: {
-      comidas: number;
-      seguimientos: number;
-    };
-    // Estadísticas de adherencia
+    gustos?: string | null;
+    disgustos?: string | null;
+    alergias?: string | null;
+    enfermedades?: string | null;
+    medicamentos?: string | null;
+    restricciones?: string | null;
+    objetivos?: string | null;
+    observaciones?: string | null;
+  } | null;
+  
+  mediciones: Medicion[];
+  consultas: Array<Consulta & { mediciones: Medicion[] }>;
+  planes: Array<PlanNutricional & {
+    _count: { comidas: number; seguimientos: number };
     adherencia?: {
       diasConSeguimiento: number;
       totalDias: number;
       porcentajeAdherencia: number;
     };
   }>;
-
-  // Estadísticas generales
+  
   estadisticas: {
     totalConsultas: number;
     consultasCompletadas: number;
     consultasPendientes: number;
     totalMediciones: number;
-    pesoInicial?: number;
-    pesoActual?: number;
+    pesoInicial?: number | null;
+    pesoActual?: number | null;
     diferenciaPeso?: number;
-    imcInicial?: number;
-    imcActual?: number;
+    imcInicial?: number | null;
+    imcActual?: number | null;
     diasEnSeguimiento: number;
     totalPlanes: number;
     planesActivos: number;
@@ -102,110 +57,41 @@ export interface DatosReportePaciente {
   };
 }
 
-/**
- * Obtener todos los datos necesarios para el reporte de un paciente
- */
 export async function obtenerDatosReportePaciente(
   pacienteId: string, 
   usuarioId: string
 ): Promise<DatosReportePaciente | null> {
-  
-  // Verificar que el paciente pertenece al usuario
-  const pacienteBase = await prisma.paciente.findFirst({
-    where: {
-      id: pacienteId,
-      usuarioId: usuarioId
-    }
-  });
-
-  if (!pacienteBase) {
-    return null;
-  }
-
-  // Obtener todos los datos en paralelo para mejor performance
-  const [
-    paciente,
-    mediciones,
-    consultas,
-    planes,
-    seguimientos
-  ] = await Promise.all([
-    // Paciente con perfil médico
+  // Query simple - traer todo lo necesario sin select manual
+  const [paciente, mediciones, consultas, planes, seguimientos] = await Promise.all([
     prisma.paciente.findUnique({
       where: { id: pacienteId },
-      include: {
-        perfilMedico: true
-      }
+      include: { perfilMedico: true }
     }),
-
-    // Mediciones ordenadas por fecha
+    
     prisma.medicion.findMany({
       where: { pacienteId },
-      orderBy: { fecha: 'asc' },
-      select: {
-        id: true,
-        fecha: true,
-        pesoKg: true,
-        alturaCm: true,
-        imc: true,
-        notas: true,
-        consultaId: true
-      }
+      orderBy: { fecha: 'asc' }
     }),
-
-    // Consultas con sus mediciones
+    
     prisma.consulta.findMany({
       where: { pacienteId },
-      include: {
-        mediciones: {
-          select: {
-            id: true,
-            fecha: true,
-            pesoKg: true,
-            alturaCm: true,
-            imc: true,
-            notas: true
-          }
-        }
-      },
+      include: { mediciones: true },
       orderBy: { inicio: 'desc' }
     }),
-
-    // Planes nutricionales con conteos
+    
     prisma.planNutricional.findMany({
       where: { pacienteId },
-      include: {
-        _count: {
-          select: {
-            comidas: true,
-            seguimientos: true
-          }
-        }
-      },
+      include: { _count: { select: { comidas: true, seguimientos: true } } },
       orderBy: { fechaInicio: 'desc' }
     }),
-
-    // Seguimientos para calcular adherencia
+    
     prisma.seguimientoPlan.findMany({
-      where: {
-        planNutricional: {
-          pacienteId
-        }
-      },
-      include: {
-        seguimientoComidas: {
-          select: {
-            estado: true,
-            porcentajeConsumido: true
-          }
-        }
-      }
+      where: { planNutricional: { pacienteId } },
+      include: { seguimientoComidas: { select: { estado: true, porcentajeConsumido: true } } }
     })
   ]);
 
-  if (!paciente) {
-    return null;
-  }
+  if (!paciente) return null;
 
   // Calcular estadísticas de adherencia por plan
   const planesConAdherencia = planes.map(plan => {
@@ -298,71 +184,18 @@ export async function obtenerDatosReportePaciente(
       id: paciente.id,
       nombre: paciente.nombre,
       apellido: paciente.apellido,
-      email: paciente.email || undefined,
-      telefono: paciente.telefono || undefined,
-      fechaNacimiento: paciente.fechaNacimiento || undefined,
-      sexo: paciente.sexo || undefined,
-      alturaCm: paciente.alturaCm || undefined,
-      notas: paciente.notas || undefined,
+      email: paciente.email,
+      telefono: paciente.telefono,
+      fechaNacimiento: paciente.fechaNacimiento,
+      sexo: paciente.sexo,
+      alturaCm: paciente.alturaCm,
+      notas: paciente.notas,
       creadoEn: paciente.creadoEn
     },
-    perfilMedico: paciente.perfilMedico ? {
-      gustos: paciente.perfilMedico.gustos || undefined,
-      disgustos: paciente.perfilMedico.disgustos || undefined,
-      alergias: paciente.perfilMedico.alergias || undefined,
-      enfermedades: paciente.perfilMedico.enfermedades || undefined,
-      medicamentos: paciente.perfilMedico.medicamentos || undefined,
-      restricciones: paciente.perfilMedico.restricciones || undefined,
-      objetivos: paciente.perfilMedico.objetivos || undefined,
-      observaciones: paciente.perfilMedico.observaciones || undefined
-    } : undefined,
-    mediciones: mediciones.map(m => ({
-      id: m.id,
-      fecha: m.fecha,
-      pesoKg: m.pesoKg || undefined,
-      alturaCm: m.alturaCm || undefined,
-      imc: m.imc || undefined,
-      notas: m.notas || undefined,
-      consultaId: m.consultaId || undefined
-    })),
-    consultas: consultas.map(c => ({
-      id: c.id,
-      inicio: c.inicio,
-      fin: c.fin,
-      estado: c.estado,
-      lugar: c.lugar || undefined,
-      notas: c.notas || undefined,
-      mediciones: c.mediciones.map(m => ({
-        id: m.id,
-        fecha: m.fecha,
-        pesoKg: m.pesoKg || undefined,
-        alturaCm: m.alturaCm || undefined,
-        imc: m.imc || undefined,
-        notas: m.notas || undefined
-      }))
-    })),
-    planes: planesConAdherencia.map(p => ({
-      id: p.id,
-      nombre: p.nombre,
-      descripcion: p.descripcion || undefined,
-      tipo: p.tipo,
-      estado: p.estado,
-      fechaInicio: p.fechaInicio,
-      fechaFin: p.fechaFin || undefined,
-      caloriasObjetivo: p.caloriasObjetivo || undefined,
-      proteinasObjetivo: p.proteinasObjetivo || undefined,
-      carbohidratosObjetivo: p.carbohidratosObjetivo || undefined,
-      grasasObjetivo: p.grasasObjetivo || undefined,
-      notas: p.notas || undefined,
-      _count: p._count,
-      adherencia: p.adherencia
-    })),
-    estadisticas: {
-      ...estadisticas,
-      pesoInicial: estadisticas.pesoInicial || undefined,
-      pesoActual: estadisticas.pesoActual || undefined,
-      imcInicial: estadisticas.imcInicial || undefined,
-      imcActual: estadisticas.imcActual || undefined
-    }
+    perfilMedico: paciente.perfilMedico, // En el nivel superior
+    mediciones,
+    consultas,
+    planes: planesConAdherencia,
+    estadisticas
   };
 }

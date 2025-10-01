@@ -1,7 +1,6 @@
-import { PrismaClient, EstadoConsulta } from '@/generated/prisma'
+import { EstadoConsulta } from '@prisma/client'
 import { Consulta, CrearConsulta, ActualizarConsulta, ConsultaConPaciente } from '@/types/consulta'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 export class ConsultasService {
   // Crear una nueva consulta

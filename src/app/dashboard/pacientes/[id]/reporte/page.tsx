@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requireAuth } from "@/lib/auth";
 import { obtenerReportePacienteAction } from "./actions";
-import { calcularEdad, formatearFecha, obtenerEstadoIMC } from "@/lib/reportes-utils";
+import { calcularEdad, obtenerEstadoIMC } from "@/lib/reportes-utils";
 import GraficaPeso from "@/components/reportes/GraficaPeso";
 import ResumenPlanes from "@/components/reportes/ResumenPlanes";
 import TablaConsultas from "@/components/reportes/TablaConsultas";
@@ -26,7 +26,7 @@ export default async function ReportePacientePage({ params }: Props) {
   const datos = reporteResult.data;
   const { paciente, perfilMedico, mediciones, consultas, planes, estadisticas } = datos;
   
-  const edad = calcularEdad(paciente.fechaNacimiento);
+  const edad = calcularEdad(paciente.fechaNacimiento || null);
   const estadoIMC = estadisticas.imcActual ? obtenerEstadoIMC(estadisticas.imcActual) : null;
 
   return (

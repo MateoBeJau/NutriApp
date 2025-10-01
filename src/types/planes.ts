@@ -7,19 +7,19 @@ export interface PlanNutricional {
   pacienteId: string;
   usuarioId: string;
   nombre: string;
-  descripcion?: string;
+  descripcion?: string | null;
   tipo: TipoPlan;
   estado: EstadoPlan;
   fechaInicio: Date;
-  fechaFin?: Date;
-  caloriasObjetivo?: number;
-  proteinasObjetivo?: number;
-  carbohidratosObjetivo?: number;
-  grasasObjetivo?: number;
-  notas?: string;
-  promptIA?: string;
-  modeloIA?: string;
-  restriccionesAplicadas?: string;
+  fechaFin?: Date | null;
+  caloriasObjetivo?: number | null;
+  proteinasObjetivo?: number | null;
+  carbohidratosObjetivo?: number | null;
+  grasasObjetivo?: number | null;
+  notas?: string | null;
+  promptIA?: string | null;
+  modeloIA?: string | null;
+  restriccionesAplicadas?: string | null;
   creadoEn: Date;
   actualizadoEn: Date;
 }
@@ -29,12 +29,12 @@ export interface ComidaPlan {
   planNutricionalId: string;
   tipo: TipoComida;
   nombre: string;
-  descripcion?: string;
-  horaRecomendada?: string;
-  caloriasTotal?: number;
-  proteinasTotal?: number;
-  carbohidratosTotal?: number;
-  grasasTotal?: number;
+  descripcion?: string | null;
+  horaRecomendada?: string | null;
+  caloriasTotal?: number | null;
+  proteinasTotal?: number | null;
+  carbohidratosTotal?: number | null;
+  grasasTotal?: number | null;
   orden: number;
   creadoEn: Date;
   actualizadoEn: Date;
@@ -43,19 +43,19 @@ export interface ComidaPlan {
 export interface Alimento {
   id: string;
   nombre: string;
-  marca?: string;
-  categoria?: string;
+  marca?: string | null;
+  categoria?: string | null;
   caloriasPor100g: number;
   proteinasPor100g: number;
   carbohidratosPor100g: number;
   grasasPor100g: number;
-  fibraPor100g?: number;
-  alergenos?: string;
-  restricciones?: string;
-  caracteristicas?: string;
+  fibraPor100g?: number | null;
+  alergenos?: string | null;
+  restricciones?: string | null;
+  caracteristicas?: string | null;
   aptoParaDiabetes: boolean;
   aptoParaHipertension: boolean;
-  indiceGlicemico?: number;
+  indiceGlicemico?: number | null;
   esGenerico: boolean;
   activo: boolean;
   creadoEn: Date;
@@ -68,12 +68,12 @@ export interface AlimentoComida {
   alimentoId: string;
   cantidad: number;
   unidad: string;
-  calorias: number;
-  proteinas: number;
-  carbohidratos: number;
-  grasas: number;
-  preparacion?: string;
-  notas?: string;
+  calorias: number | null;
+  proteinas: number | null;
+  carbohidratos: number | null;
+  grasas: number | null;
+  preparacion?: string | null;
+  notas?: string | null;
   creadoEn: Date;
 }
 
@@ -81,10 +81,10 @@ export interface SeguimientoPlan {
   id: string;
   planNutricionalId: string;
   fecha: Date;
-  cumplimientoGeneral?: number;
-  pesoDelDia?: number;
-  notasPaciente?: string;
-  notasNutricionista?: string;
+  cumplimientoGeneral?: number | null;
+  pesoDelDia?: number | null;
+  notasPaciente?: string | null;
+  notasNutricionista?: string | null;
   creadoEn: Date;
   actualizadoEn: Date;
 }
@@ -95,8 +95,8 @@ export interface SeguimientoComida {
   comidaPlanId: string;
   estado: EstadoSeguimiento;
   porcentajeConsumido: number;
-  horaConsumo?: Date;
-  notas?: string;
+  horaConsumo?: Date | null;
+  notas?: string | null;
   creadoEn: Date;
   actualizadoEn: Date;
 }
@@ -120,12 +120,13 @@ export interface PlanNutricionalCompleto extends PlanNutricional {
     nombre: string;
     apellido: string;
     perfilMedico?: {
-      alergias?: string;
-      restricciones?: string;
-      enfermedades?: string;
-      gustos?: string;
-      disgustos?: string;
-    };
+      alergias?: string | null;
+      restricciones?: string | null;
+      enfermedades?: string | null;
+      gustos?: string | null;
+      disgustos?: string | null;
+      objetivos?: string | null;
+    } | null;
   };
   comidas: ComidaPlanCompleta[];
 }

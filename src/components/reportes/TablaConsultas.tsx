@@ -1,31 +1,18 @@
 "use client";
 
-interface Consulta {
-  id: string;
-  inicio: Date;
-  fin: Date;
-  estado: string;
-  lugar?: string;
-  notas?: string;
-  mediciones: Array<{
-    id: string;
-    fecha: Date;
-    pesoKg?: number;
-    alturaCm?: number;
-    imc?: number;
-    notas?: string;
-  }>;
-}
+import { Consulta, Medicion } from '@prisma/client';
 
-interface Estadisticas {
-  totalConsultas: number;
-  consultasCompletadas: number;
-  consultasPendientes: number;
+interface ConsultaConMediciones extends Consulta {
+  mediciones: Medicion[];
 }
 
 interface Props {
-  consultas: Consulta[];
-  estadisticas: Estadisticas;
+  consultas: ConsultaConMediciones[];
+  estadisticas: {
+    totalConsultas: number;
+    consultasCompletadas: number;
+    consultasPendientes: number;
+  };
 }
 
 const ESTADOS_LABELS: Record<string, string> = {
