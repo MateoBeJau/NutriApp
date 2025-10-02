@@ -188,7 +188,54 @@ export async function guardarPlanConfirmado(pacienteId: string, planData: PlanDa
 
     const usuarioId = user.id;
 
-    // Crear el plan nutricional en la base de datos
+    // ✅ PASO 1: Buscar o crear alimentos (evita duplicados)
+    console.log('=== PROCESANDO ALIMENTOS ===');
+    const alimentosMap = new Map<string, string>(); // nombre -> id
+
+    for (const comida of planData.comidas || []) {
+      for (const alimento of comida.alimentos) {
+        const nombreAlimento = alimento.alimento.nombre;
+        
+        // Si ya procesamos este alimento, continuar
+        if (alimentosMap.has(nombreAlimento)) {
+          continue;
+        }
+
+        // Buscar si ya existe en la DB
+        let alimentoExistente = await prisma.alimento.findFirst({
+          where: {
+            nombre: nombreAlimento,
+            esGenerico: true
+          }
+        });
+
+        // Si no existe, crearlo
+        if (!alimentoExistente) {
+          console.log(`🆕 Creando nuevo alimento: ${nombreAlimento}`);
+          alimentoExistente = await prisma.alimento.create({
+            data: {
+              nombre: nombreAlimento,
+              categoria: alimento.alimento.categoria || 'General',
+              caloriasPor100g: alimento.alimento.caloriasPor100g,
+              proteinasPor100g: alimento.alimento.proteinasPor100g,
+              carbohidratosPor100g: alimento.alimento.carbohidratosPor100g,
+              grasasPor100g: alimento.alimento.grasasPor100g,
+              caracteristicas: alimento.alimento.caracteristicas,
+              alergenos: alimento.alimento.alergenos,
+              restricciones: alimento.alimento.restricciones,
+              esGenerico: true,
+              activo: true
+            }
+          });
+        } else {
+          console.log(`♻️  Reutilizando alimento existente: ${nombreAlimento}`);
+        }
+
+        alimentosMap.set(nombreAlimento, alimentoExistente.id);
+      }
+    }
+
+    // ✅ PASO 2: Crear el plan nutricional conectando a alimentos existentes
     console.log('=== INICIANDO CREACIÓN EN BD ===');
     const nuevoPlan = await prisma.planNutricional.create({
       data: {
@@ -219,30 +266,23 @@ export async function guardarPlanConfirmado(pacienteId: string, planData: PlanDa
             grasasTotal: comida.grasasTotal,
             orden: index,
             alimentos: {
-              create: comida.alimentos.map((alimento) => ({
-                cantidad: alimento.cantidad,
-                unidad: alimento.unidad,
-                calorias: (alimento.alimento.caloriasPor100g * alimento.cantidad) / 100,
-                proteinas: (alimento.alimento.proteinasPor100g * alimento.cantidad) / 100,
-                carbohidratos: (alimento.alimento.carbohidratosPor100g * alimento.cantidad) / 100,
-                grasas: (alimento.alimento.grasasPor100g * alimento.cantidad) / 100,
-                preparacion: alimento.preparacion,
-                alimento: {
-                  create: {
-                    nombre: alimento.alimento.nombre,
-                    categoria: alimento.alimento.categoria || 'General',
-                    caloriasPor100g: alimento.alimento.caloriasPor100g,
-                    proteinasPor100g: alimento.alimento.proteinasPor100g,
-                    carbohidratosPor100g: alimento.alimento.carbohidratosPor100g,
-                    grasasPor100g: alimento.alimento.grasasPor100g,
-                    caracteristicas: alimento.alimento.caracteristicas,
-                    alergenos: alimento.alimento.alergenos,
-                    restricciones: alimento.alimento.restricciones,
-                    esGenerico: true,
-                    activo: true
-                  }
-                },
-              })),
+              create: comida.alimentos.map((alimento) => {
+                const alimentoId = alimentosMap.get(alimento.alimento.nombre);
+                return {
+                  cantidad: alimento.cantidad,
+                  unidad: alimento.unidad,
+                  calorias: (alimento.alimento.caloriasPor100g * alimento.cantidad) / 100,
+                  proteinas: (alimento.alimento.proteinasPor100g * alimento.cantidad) / 100,
+                  carbohidratos: (alimento.alimento.carbohidratosPor100g * alimento.cantidad) / 100,
+                  grasas: (alimento.alimento.grasasPor100g * alimento.cantidad) / 100,
+                  preparacion: alimento.preparacion,
+                  alimento: {
+                    connect: {
+                      id: alimentoId // ✅ Conectar al alimento existente o recién creado
+                    }
+                  },
+                };
+              }),
             },
           })),
         },
