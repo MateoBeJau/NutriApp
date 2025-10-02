@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth';
-import { TipoComida } from '@/generated/prisma';
+import { TipoComida } from '@prisma/client';
 
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_PLANES_URL;
 const N8N_AUTH_TOKEN = process.env.N8N_AUTH_TOKEN;
