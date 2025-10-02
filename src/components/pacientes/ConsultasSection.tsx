@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ConsultaConPaciente, EstadoConsulta, EstadoPago } from '@/types/consulta'
+import { ConsultaConPaciente } from '@/types/consulta'
+import { EstadoConsulta, EstadoPago } from '@prisma/client' // ✅ Importar de Prisma
 import Button from '@/components/ui/Button'
 import { obtenerConsultasDePacienteAction, cambiarEstadoPagoAction } from '@/app/dashboard/pacientes/consultas-actions'
 import { useRouter } from 'next/navigation'
@@ -127,13 +128,14 @@ export default function ConsultasSection({ pacienteId, pacienteNombre, pacienteA
   }
 
   const consultasAMostrar = mostrarTodas ? consultas : consultas.slice(0, 5)
-  const estadisticas = {
+  // Calcular estadísticas
+  const stats = {
     total: consultas.length,
-    completadas: consultas.filter(c => c.estado === 'COMPLETADO').length,
-    programadas: consultas.filter(c => c.estado === 'PROGRAMADO' || c.estado === 'CONFIRMADO').length,
-    canceladas: consultas.filter(c => c.estado === 'CANCELADO').length,
-    pagadas: consultas.filter(c => c.estadoPago === 'PAGADO').length,
-    pendientes: consultas.filter(c => c.estadoPago === 'PENDIENTE').length,
+    completadas: consultas.filter(c => c.estado === EstadoConsulta.COMPLETADO).length,
+    programadas: consultas.filter(c => c.estado === EstadoConsulta.PROGRAMADO || c.estado === EstadoConsulta.CONFIRMADO).length,
+    canceladas: consultas.filter(c => c.estado === EstadoConsulta.CANCELADO).length,
+    pagadas: consultas.filter(c => c.estadoPago === EstadoPago.PAGADO).length, // ✅ Usar enum
+    pendientes: consultas.filter(c => c.estadoPago === EstadoPago.PENDIENTE).length, // ✅ Usar enum
   }
 
   if (cargando) {
@@ -171,19 +173,19 @@ export default function ConsultasSection({ pacienteId, pacienteNombre, pacienteA
           {consultas.length > 0 && (
             <div className="flex space-x-4 text-sm">
               <div className="text-center">
-                <div className="font-semibold text-lg text-gray-900">{estadisticas.total}</div>
+                <div className="font-semibold text-lg text-gray-900">{stats.total}</div>
                 <div className="text-gray-500">Total</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-lg text-green-600">{estadisticas.pagadas}</div>
+                <div className="font-semibold text-lg text-green-600">{stats.pagadas}</div>
                 <div className="text-gray-500">Pagadas</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-lg text-yellow-600">{estadisticas.pendientes}</div>
+                <div className="font-semibold text-lg text-yellow-600">{stats.pendientes}</div>
                 <div className="text-gray-500">Pendientes</div>
               </div>
               <div className="text-center">
-                <div className="font-semibold text-lg text-purple-600">{estadisticas.completadas}</div>
+                <div className="font-semibold text-lg text-purple-600">{stats.completadas}</div>
                 <div className="text-gray-500">Completadas</div>
               </div>
             </div>
@@ -264,37 +266,27 @@ export default function ConsultasSection({ pacienteId, pacienteNombre, pacienteA
                     <div className="flex items-center space-x-3">
                       {/* Botones de estado de pago */}
                       <div className="flex items-center space-x-1">
-                        {consulta.estadoPago === 'PENDIENTE' ? (
+                        {consulta.estadoPago === EstadoPago.PENDIENTE ? ( // ✅ Usar enum
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleCambiarEstadoPago(consulta.id, 'PAGADO')
+                              handleCambiarEstadoPago(consulta.id, EstadoPago.PAGADO) // ✅ Usar enum
                             }}
                             disabled={cambiandoEstado === consulta.id}
                             className="px-2 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-700 rounded-md border border-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            title="Marcar como pagado"
                           >
-                            {cambiandoEstado === consulta.id ? (
-                              <div className="inline-block animate-spin rounded-full h-3 w-3 border-b border-green-600"></div>
-                            ) : (
-                              '💚 Pagar'
-                            )}
+                            💰 Marcar Pagado
                           </button>
                         ) : (
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleCambiarEstadoPago(consulta.id, 'PENDIENTE')
+                              handleCambiarEstadoPago(consulta.id, EstadoPago.PENDIENTE) // ✅ Usar enum
                             }}
                             disabled={cambiandoEstado === consulta.id}
-                            className="px-2 py-1 text-xs bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-md border border-yellow-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            title="Marcar como pendiente"
+                            className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                           >
-                            {cambiandoEstado === consulta.id ? (
-                              <div className="inline-block animate-spin rounded-full h-3 w-3 border-b border-yellow-600"></div>
-                            ) : (
-                              '💛 Pendiente'
-                            )}
+                            ⏳ Marcar Pendiente
                           </button>
                         )}
                       </div>

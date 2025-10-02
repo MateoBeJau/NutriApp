@@ -1,16 +1,5 @@
-export enum EstadoConsulta {
-  PROGRAMADO = 'PROGRAMADO',
-  CONFIRMADO = 'CONFIRMADO',
-  CANCELADO = 'CANCELADO',
-  AUSENTE = 'AUSENTE',
-  COMPLETADO = 'COMPLETADO',
-  REAGENDADO = 'REAGENDADO'
-}
-
-export enum EstadoPago {
-  PAGADO = 'PAGADO',
-  PENDIENTE = 'PENDIENTE'
-}
+// ✅ BUENO: Importar enums de Prisma, no duplicarlos
+import { EstadoConsulta, EstadoPago, Medicion } from '@prisma/client';
 
 export interface Consulta {
   id: string
@@ -18,10 +7,10 @@ export interface Consulta {
   pacienteId: string
   inicio: Date
   fin: Date
-  estado: EstadoConsulta
-  estadoPago: EstadoPago
-  lugar?: string
-  notas?: string
+  estado: EstadoConsulta  // ✅ Usar el de Prisma
+  estadoPago: EstadoPago  // ✅ Usar el de Prisma
+  lugar?: string | null
+  notas?: string | null
   creadoEn: Date
   actualizadoEn: Date
   
@@ -30,16 +19,16 @@ export interface Consulta {
     id: string
     nombre: string
     apellido: string
-    email?: string
-    telefono?: string
+    email?: string | null
+    telefono?: string | null
   }
   mediciones?: Array<{
     id: string
     fecha: Date
-    pesoKg?: number
-    alturaCm?: number
-    imc?: number
-    notas?: string
+    pesoKg?: number | null
+    alturaCm?: number | null
+    imc?: number | null
+    notas?: string | null
   }>
 }
 
@@ -54,8 +43,8 @@ export interface CrearConsulta {
 export interface ActualizarConsulta {
   inicio?: Date
   fin?: Date
-  estado?: EstadoConsulta
-  estadoPago?: EstadoPago
+  estado?: EstadoConsulta  // ✅ Usar el de Prisma
+  estadoPago?: EstadoPago  // ✅ Usar el de Prisma
   lugar?: string
   notas?: string
 }
@@ -65,7 +54,8 @@ export interface ConsultaConPaciente extends Consulta {
     id: string
     nombre: string
     apellido: string
-    email?: string
-    telefono?: string
+    email?: string | null
+    telefono?: string | null
   }
+  mediciones?: Medicion[] // ✅ Agregar mediciones con tipo de Prisma
 }

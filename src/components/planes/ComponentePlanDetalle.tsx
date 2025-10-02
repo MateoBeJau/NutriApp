@@ -485,7 +485,7 @@ export default function ComponentePlanDetalle({ plan }: Props) {
                       <div className="text-center py-8">
                         <div className="text-6xl mb-3">🍽️</div>
                         <p className="text-gray-500 text-sm">Esta comida está vacía</p>
-                        <p className="text-gray-400 text-xs mt-1">Haz clic en "Agregar" para añadir alimentos</p>
+                        <p className="text-gray-400 text-xs mt-1">Haz clic en &quot;Agregar&quot; para añadir alimentos</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -521,19 +521,19 @@ export default function ComponentePlanDetalle({ plan }: Props) {
                                 {/* Info nutricional */}
                                 <div className="grid grid-cols-4 gap-3 text-center text-xs">
                                   <div>
-                                    <div className="font-bold text-blue-600">{Math.round(alimentoComida.calorias)}</div>
+                                    <div className="font-bold text-blue-600">{Math.round(alimentoComida.calorias ?? 0)}</div>
                                     <div className="text-gray-500">cal</div>
                                   </div>
                                   <div>
-                                    <div className="font-bold text-green-600">{Math.round(alimentoComida.proteinas)}g</div>
+                                    <div className="font-bold text-green-600">{Math.round(alimentoComida.proteinas ?? 0)}g</div>
                                     <div className="text-gray-500">prot</div>
                                   </div>
                                   <div>
-                                    <div className="font-bold text-amber-600">{Math.round(alimentoComida.carbohidratos)}g</div>
+                                    <div className="font-bold text-amber-600">{Math.round(alimentoComida.carbohidratos ?? 0)}g</div>
                                     <div className="text-gray-500">carb</div>
                                   </div>
                                   <div>
-                                    <div className="font-bold text-purple-600">{Math.round(alimentoComida.grasas)}g</div>
+                                    <div className="font-bold text-purple-600">{Math.round(alimentoComida.grasas ?? 0)}g</div>
                                     <div className="text-gray-500">gras</div>
                                   </div>
                                 </div>

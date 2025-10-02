@@ -14,7 +14,11 @@ export default async function PlanesPage() {
 
   // Obtener todos los planes del nutricionista
   const planesRes = await obtenerPlanesNutricionalesAction();
-  const planes: PlanNutricionalConPaciente[] = planesRes.success ? planesRes.data : [];
+  
+  // ✅ BUENO: Manejo robusto con fallback
+  const planes: PlanNutricionalConPaciente[] = planesRes.success && planesRes.data 
+    ? planesRes.data 
+    : [];
 
   return (
     <div className="max-w-7xl mx-auto py-8">

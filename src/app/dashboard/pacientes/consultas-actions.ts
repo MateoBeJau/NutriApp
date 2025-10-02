@@ -2,7 +2,7 @@
 
 import { getCurrentUser } from '@/lib/auth'
 import { ConsultasService } from '@/services/consultas'
-import { EstadoPago } from '@/types/consulta'
+import { EstadoPago } from '@prisma/client'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ConsultaConPaciente, EstadoConsulta } from '@/types/consulta'
+import { ConsultaConPaciente } from '@/types/consulta'
+import { EstadoConsulta } from '@prisma/client' // ✅ Cambio aquí
 import Button from '@/components/ui/Button'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { FormularioConsulta } from '@/components/consultas/FormularioConsulta'

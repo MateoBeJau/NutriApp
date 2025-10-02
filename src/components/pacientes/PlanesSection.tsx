@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { PlanNutricional } from '@prisma/client';
+import { ComidaPlanCompleta } from '@/types/planes';
 import { GenerarPlanButton } from '@/components/planes/GenerarPlanButton';
 import { obtenerPlanesPaciente } from '@/app/dashboard/planes/obtener-planes-actions';
 import Link from 'next/link';
@@ -9,28 +11,14 @@ interface PlanesSectionProps {
   pacienteId: string;
 }
 
-interface PlanNutricional {
-  id: string;
-  nombre: string;
-  descripcion: string | null;
-  tipo: string;
-  estado: string;
-  fechaInicio: Date;
-  caloriasObjetivo: number | null;
-  proteinasObjetivo: number | null;
-  carbohidratosObjetivo: number | null;
-  grasasObjetivo: number | null;
-  comidas: Array<{
-    id: string;
-    tipo: string;
-    nombre: string;
-    orden: number;
-  }>;
-}
+// ✅ BUENO: Tipo específico para esta vista
+type PlanConComidas = PlanNutricional & {
+  comidas: ComidaPlanCompleta[];
+};
 
 export default function PlanesSection({ pacienteId }: PlanesSectionProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [planes, setPlanes] = useState<PlanNutricional[]>([]);
+  const [planes, setPlanes] = useState<PlanConComidas[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -39,13 +27,15 @@ export default function PlanesSection({ pacienteId }: PlanesSectionProps) {
         setIsLoading(true);
         const resultado = await obtenerPlanesPaciente(pacienteId);
         
-        if (resultado.success) {
+        if (resultado.success && resultado.planes) {
           setPlanes(resultado.planes);
         } else {
           console.error('Error al cargar planes:', resultado.error);
+          setPlanes([]);
         }
       } catch (error) {
         console.error('Error al cargar planes:', error);
+        setPlanes([]);
       } finally {
         setIsLoading(false);
       }

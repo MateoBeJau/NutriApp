@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { ConsultasService } from '@/services/consultas'
 import { enviarNotificacionConsulta } from '@/services/notificaciones'
 import { obtenerPacientesActivos } from '@/services/pacientes'
-import { EstadoConsulta } from '@/types/consulta'
+import { EstadoConsulta } from '@prisma/client'
 import { redirect } from 'next/navigation'
 
 export async function obtenerConsultasDelDia(fecha: Date) {

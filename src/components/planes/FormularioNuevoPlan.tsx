@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { crearPlanNutricionalAction } from "@/app/dashboard/planes/actions";
+import Link from 'next/link';
 
 interface Paciente {
   id: string;
@@ -31,7 +32,7 @@ export default function FormularioNuevoPlan({ pacientes }: Props) {
     const formData = new FormData(event.currentTarget);
     const res = await crearPlanNutricionalAction(formData);
 
-    if (res.success) {
+    if (res.success && res.data) { // ✅ Verificar que data existe
       // Redirigir al plan creado
       router.push(`/dashboard/planes/${res.data.id}`);
     } else {
@@ -70,7 +71,10 @@ export default function FormularioNuevoPlan({ pacientes }: Props) {
           </select>
           {pacientes.length === 0 && (
             <p className="text-sm text-gray-500 mt-1">
-              No hay pacientes activos. <a href="/dashboard/pacientes/nuevo" className="text-blue-600 hover:text-blue-800">Crear paciente</a>
+              No hay pacientes activos.{' '}
+              <Link href="/dashboard/pacientes/nuevo" className="text-blue-600 hover:text-blue-800">
+                Crear paciente
+              </Link>
             </p>
           )}
         </div>

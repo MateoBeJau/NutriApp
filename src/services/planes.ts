@@ -221,10 +221,10 @@ async function recalcularTotalesComida(comidaPlanId: string) {
 
   const totales = alimentos.reduce(
     (acc, alimento) => ({
-      calorias: acc.calorias + alimento.calorias,
-      proteinas: acc.proteinas + alimento.proteinas,
-      carbohidratos: acc.carbohidratos + alimento.carbohidratos,
-      grasas: acc.grasas + alimento.grasas
+      calorias: acc.calorias + (alimento.calorias ?? 0),
+      proteinas: acc.proteinas + (alimento.proteinas ?? 0),
+      carbohidratos: acc.carbohidratos + (alimento.carbohidratos ?? 0),
+      grasas: acc.grasas + (alimento.grasas ?? 0)
     }),
     { calorias: 0, proteinas: 0, carbohidratos: 0, grasas: 0 }
   );

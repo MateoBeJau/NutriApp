@@ -3,19 +3,13 @@
 import { useState } from 'react'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
+import { Medicion } from '@prisma/client'
 import { agregarMedicionConsultaAction } from '@/app/dashboard/agenda/server-actions'
 
 interface MedicionesConsultaProps {
   consultaId: string
   pacienteId: string
-  medicionesExistentes: Array<{
-    id: string
-    fecha: Date
-    pesoKg?: number
-    alturaCm?: number
-    imc?: number
-    notas?: string
-  }>
+  medicionesExistentes: Medicion[]
   onMedicionAgregada: () => void
 }
 

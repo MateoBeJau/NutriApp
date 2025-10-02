@@ -3,7 +3,8 @@
 import { prisma } from '@/lib/prisma'
 import { ConsultasService } from '@/services/consultas'
 import { enviarNotificacionConsulta } from '@/services/notificaciones'
-import {  ActualizarConsulta, EstadoConsulta, EstadoPago } from '@/types/consulta'
+import { ActualizarConsulta } from '@/types/consulta'
+import { EstadoConsulta, EstadoPago } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import {  } from 'next/navigation'
 
