@@ -11,9 +11,10 @@ interface NavbarProps {
     email: string;
     nombre?: string;
   };
+  onMenuClick: () => void; // ✅ Prop para abrir el sidebar móvil
 }
 
-export default function Navbar({ user }: NavbarProps) {
+export default function Navbar({ user, onMenuClick }: NavbarProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -25,7 +26,8 @@ export default function Navbar({ user }: NavbarProps) {
       {/* Mobile menu button */}
       <button
         type="button"
-        className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
+        className="-m-2.5 p-2.5 text-gray-700 lg:hidden hover:bg-gray-100 rounded-lg transition-colors"
+        onClick={onMenuClick} // ✅ Agregado onClick
       >
         <span className="sr-only">Abrir sidebar</span>
         <Menu className="h-6 w-6" aria-hidden="true" />
