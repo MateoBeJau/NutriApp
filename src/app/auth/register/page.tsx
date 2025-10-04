@@ -8,6 +8,11 @@ export default async function RegisterPage({
 }: { 
   searchParams?: { error?: string } 
 }) {
+  // 🚫 Deshabilitar registro en producción
+  if (process.env.NODE_ENV === 'production') {
+    redirect('/auth/login');
+  }
+
   // ✅ AWAIT searchParams en Next.js 15
   const resolvedSearchParams = await searchParams;
   const error = resolvedSearchParams?.error;

@@ -116,14 +116,17 @@ export default async function LoginPage({
             </button>
           </div>
           
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              ¿No tienes cuenta?{' '}
-              <a href="/auth/register" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Regístrate aquí
-              </a>
-            </p>
-          </div>
+          {/* Solo mostrar link de registro en desarrollo */}
+          {process.env.NODE_ENV !== 'production' && (
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                ¿No tienes cuenta?{' '}
+                <a href="/auth/register" className="font-medium text-indigo-600 hover:text-indigo-500">
+                  Regístrate aquí
+                </a>
+              </p>
+            </div>
+          )}
         </form>
       </div>
     </div>
